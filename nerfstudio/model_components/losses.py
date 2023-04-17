@@ -142,6 +142,21 @@ def distortion_loss(weights_list, ray_samples_list):
     loss = torch.mean(lossfun_distortion(c, w))
     return loss
 
+# Add one more loss for training: info nerf [0, 1] entropy loss
+def entropy_loss(deltas: TensorType, densities: TensorType, threshold: float = 0.5) -> TensorType:
+    """ entropy loss from info-nerf, this is actually not very much finished,
+        since currently we can only sample from train views  
+    """
+    # We can of course sample some random rays in an unseen pose (near the current pose maybe)
+    delta_density = deltas * densities
+    alphas = 1 - torch.exp(-delta_density)
+    alpha_sum = torch.sum(alphas, dim = -2, keepdim = True)             # shape (ray_num, 1, 1)
+    valid_index = (alpha_sum > threshold).squeeze()
+
+    valid_alphas = alphas[valid_index, ...]
+    proba        = valid_alphas / alpha_sum[valid_index, ...]
+
+    return -proba * torch.log(proba + 1e-7)
 
 def nerfstudio_distortion_loss(
     ray_samples: RaySamples,
@@ -300,6 +315,7 @@ def depth_loss(
     """
     if not is_euclidean:
         termination_depth = termination_depth * directions_norm
+    # print(termination_depth.max() if termination_depth.numel() else -1, ray_samples.frustums.starts.min(), ray_samples.frustums.ends.min())
     steps = (ray_samples.frustums.starts + ray_samples.frustums.ends) / 2
 
     if depth_loss_type == DepthLossType.DS_NERF:

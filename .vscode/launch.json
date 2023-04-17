@@ -47,6 +47,14 @@
       "args": ["instant_ngp"]
     },
     {
+      "name": "Python: train nerfacto",
+      "type": "python",
+      "request": "launch",
+      "program": "scripts/train.py",
+      "console": "integratedTerminal",
+      "args": ["nerfacto", "--data=../dataset/images_and_cams/DayaTemple/train.json"]
+    },
+    {
       "name": "Python: train ngp nerfstudio",
       "type": "python",
       "request": "launch",

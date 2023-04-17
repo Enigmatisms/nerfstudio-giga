@@ -42,6 +42,7 @@ from nerfstudio.fields.nerfacto_field import TCNNNerfactoField
 from nerfstudio.model_components.losses import (
     MSELoss,
     distortion_loss,
+    entropy_loss,
     interlevel_loss,
     orientation_loss,
     pred_normal_loss,
@@ -128,6 +129,14 @@ class NerfactoModelConfig(ModelConfig):
     """Whether to predict normals or not."""
     disable_scene_contraction: bool = False
     """Whether to disable scene contraction or not."""
+    use_entropy_loss: bool = False
+    """Whether to use entropy loss to regularize scene density."""
+    entropy_threshold: float = 0.2
+    """Entropy threshold for masking empty rays"""
+    entropy_loss_mult: float = 0.001
+    """Entropy loss multiplier"""
+    sample_unseen: bool = False
+    """Whether to sample unseen pose for density regularization."""
 
 
 class NerfactoModel(Model):
@@ -217,8 +226,8 @@ class NerfactoModel(Model):
         # shaders
         self.normals_shader = NormalsShader()
 
-        # losses
-        self.rgb_loss = MSELoss()
+        # TODO: we can opt for more stable loss like Huber, which produces higher PNSR in instant-NGP
+        self.rgb_loss = MSELoss()       # nerf facto uses MSE Loss
 
         # metrics
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
@@ -300,6 +309,10 @@ class NerfactoModel(Model):
                 field_outputs[FieldHeadNames.PRED_NORMALS],
             )
 
+        # TODO: a new setting for this
+        if self.training and self.config.use_entropy_loss:
+            outputs["rendered_entropy_loss"] = entropy_loss(ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], self.config.entropy_threshold)
+
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
@@ -332,6 +345,11 @@ class NerfactoModel(Model):
                 # ground truth supervision for normals
                 loss_dict["pred_normal_loss"] = self.config.pred_normal_loss_mult * torch.mean(
                     outputs["rendered_pred_normal_loss"]
+                )
+            # Add entropy loss
+            if self.config.use_entropy_loss:
+                loss_dict["entropy_loss"] = self.config.entropy_loss_mult * torch.mean(
+                    outputs["rendered_entropy_loss"]
                 )
         return loss_dict
 

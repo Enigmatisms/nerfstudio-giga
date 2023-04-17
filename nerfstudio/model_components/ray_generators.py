@@ -49,6 +49,8 @@ class RayGenerator(nn.Module):
         x = ray_indices[:, 2]  # col indices
         coords = self.image_coords[y, x]
 
+        # This is ray generator, for rays sampled from unseen poses, we need to skip pose refining
+
         camera_opt_to_camera = self.pose_optimizer(c)
 
         ray_bundle = self.cameras.generate_rays(

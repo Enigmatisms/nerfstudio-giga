@@ -1,0 +1,1 @@
+ns-viewer --load-config ./outputs/image_hloc/

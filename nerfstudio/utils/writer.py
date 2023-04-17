@@ -53,6 +53,9 @@ class EventName(enum.Enum):
     VIS_RAYS_PER_SEC = "Vis Rays / Sec"
     CURR_TEST_PSNR = "Test PSNR"
 
+    TRAIN_METRIC_DICT = "Train Metrics Dict"
+    TRAIN_LOSS_DICT = "Train Loss Dict"
+    TRAIN_LOSS = "Train Loss"
 
 class EventType(enum.Enum):
     """Possible Event types and their associated write function"""
@@ -431,7 +434,15 @@ class LocalWriter:
             mssg = f"{'Step (% Done)':<20}"
             for name, _ in latest_map.items():
                 if name in self.stats_to_track:
-                    mssg += f"{name:<20} "
+                    if "Dict" in name:
+                        if "Loss" in name:
+                            mssg += f"{'Distortion Loss':<20} "
+                            mssg += f"{'Entropy Loss':<20} "
+                        else:
+                            name = "Train PSNR"
+                            mssg += f"{name:<20} "
+                    else:
+                        mssg += f"{name:<20} "
             self.past_mssgs[0] = mssg
             self.past_mssgs[1] = "-" * len(mssg)
             if full_log_cond or not self.has_printed:
@@ -455,8 +466,20 @@ class LocalWriter:
                     v = _format_time(v)
                 elif "Rays" in name:
                     v = human_format(v)
+                elif "Dict" in name:
+                    if "Metrics" in name:
+                        v = f"{v['psnr'].item():0.6f}"
+                    else:
+                        dis_loss = f"{v['distortion_loss'].item():0.6f}"
+                        curr_mssg += f"{dis_loss:<20} "
+                        if 'entropy_loss' in v:
+                            ent_loss = f"{v['entropy_loss'].item():0.6f}"
+                            curr_mssg += f"{ent_loss:<20} "
+                        else:
+                            curr_mssg += f"{'Null':<20} "
+                        continue
                 else:
-                    v = f"{v:0.4f}"
+                    v = f"{v:0.6f}"
                 curr_mssg += f"{v:<20} "
 
         # update the history buffer

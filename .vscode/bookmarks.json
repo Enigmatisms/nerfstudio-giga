@@ -1,0 +1,24 @@
+{
+	"files": [
+		{
+			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
+			"bookmarks": [
+				{
+					"line": 518,
+					"column": 38,
+					"label": "Generate ray bundles and refine pose"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/model_components/ray_generators.py",
+			"bookmarks": [
+				{
+					"line": 51,
+					"column": 44,
+					"label": "Ray generator"
+				}
+			]
+		}
+	]
+}
