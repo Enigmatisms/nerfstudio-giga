@@ -148,15 +148,25 @@ def entropy_loss(deltas: TensorType, densities: TensorType, threshold: float = 0
         since currently we can only sample from train views  
     """
     # We can of course sample some random rays in an unseen pose (near the current pose maybe)
-    delta_density = deltas * densities
+    delta_density = torch.relu(deltas * densities)
     alphas = 1 - torch.exp(-delta_density)
     alpha_sum = torch.sum(alphas, dim = -2, keepdim = True)             # shape (ray_num, 1, 1)
     valid_index = (alpha_sum > threshold).squeeze()
 
     valid_alphas = alphas[valid_index, ...]
-    proba        = valid_alphas / alpha_sum[valid_index, ...]
+    if valid_index.numel() > 1:                 # if there is no valid or only one ray, we skip and return 0. 
+        proba = torch.maximum(valid_alphas / alpha_sum[valid_index, ...], 
+                        torch.full_like(valid_alphas, 1e-7, dtype = valid_alphas.dtype, device = valid_alphas.device))
+        return -proba * torch.log(proba)
+    else:
+        return torch.zeros(1, dtype = delta_density.dtype, device = delta_density.device) 
 
-    return -proba * torch.log(proba + 1e-7)
+
+def occlusion_regularization(deltas: TensorType, densities: TensorType, threshold: float) -> TensorType:
+    lengths = torch.cumsum(deltas, dim = -2)        # get lengths
+    ratios = lengths / lengths[:, -1:, :]           # normalize to [0, 1]
+    to_reg = densities[ratios < threshold] 
+    return to_reg
 
 def nerfstudio_distortion_loss(
     ray_samples: RaySamples,

@@ -102,6 +102,7 @@ class TCNNNerfactoField(Field):
         num_semantic_classes: int = 100,
         pass_semantic_gradients: bool = False,
         use_pred_normals: bool = False,
+        sigma_perterb_std: float = 0.0,
         use_average_appearance_embedding: bool = False,
         spatial_distortion: SpatialDistortion = None,
     ) -> None:
@@ -123,6 +124,7 @@ class TCNNNerfactoField(Field):
         self.use_semantics = use_semantics
         self.use_pred_normals = use_pred_normals
         self.pass_semantic_gradients = pass_semantic_gradients
+        self.sigma_perterb_std = sigma_perterb_std
 
         base_res: int = 16
         features_per_level: int = 2
@@ -141,6 +143,7 @@ class TCNNNerfactoField(Field):
             encoding_config={"otype": "Frequency", "n_frequencies": 2},
         )
 
+        # 能否做到对不同层的 Hash encoding 进行不同的 regularization？
         self.mlp_base = tcnn.NetworkWithInputEncoding(
             n_input_dims=3,
             n_output_dims=1 + self.geo_feat_dim,
@@ -240,7 +243,13 @@ class TCNNNerfactoField(Field):
             self._sample_locations.requires_grad = True
         positions_flat = positions.view(-1, 3)
         h = self.mlp_base(positions_flat).view(*ray_samples.frustums.shape, -1)
+
+        # It seems that input is never encoded and density is output directly
+        # We should find a way to regularize high-frequency output here
         density_before_activation, base_mlp_out = torch.split(h, [1, self.geo_feat_dim], dim=-1)
+        if self.sigma_perterb_std > 1e-7:                   # add noise to regularize output density
+            density_before_activation = density_before_activation + torch.randn_like(
+                density_before_activation, device = base_mlp_out.device, dtype = base_mlp_out.dtype) * self.sigma_perterb_std
         self._density_before_activation = density_before_activation
 
         # Rectifying the density with an exponential is much more stable than a ReLU or
@@ -249,6 +258,9 @@ class TCNNNerfactoField(Field):
         density = trunc_exp(density_before_activation.to(positions))
         density = density * selector[..., None]
         return density, base_mlp_out
+    
+    def set_sigma_std(self, val: float):
+        self.sigma_perterb_std = val
 
     def get_outputs(
         self, ray_samples: RaySamples, density_embedding: Optional[TensorType] = None

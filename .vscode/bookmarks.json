@@ -19,6 +19,41 @@
 					"label": "Ray generator"
 				}
 			]
+		},
+		{
+			"path": "nerfstudio/pipelines/base_pipeline.py",
+			"bookmarks": [
+				{
+					"line": 142,
+					"column": 45,
+					"label": "Get metrics dict and pass batch in"
+				}
+			]
+		},
+		{
+			"path": "scripts/process_data.py",
+			"bookmarks": [
+				{
+					"line": 220,
+					"column": 35,
+					"label": "Process data colmap call"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/process_data/colmap_utils.py",
+			"bookmarks": [
+				{
+					"line": 91,
+					"column": 8,
+					"label": "COLMAP utilities"
+				},
+				{
+					"line": 468,
+					"column": 14,
+					"label": "Output depth image"
+				}
+			]
 		}
 	]
 }

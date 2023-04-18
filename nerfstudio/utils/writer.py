@@ -436,7 +436,7 @@ class LocalWriter:
                 if name in self.stats_to_track:
                     if "Dict" in name:
                         if "Loss" in name:
-                            mssg += f"{'Distortion Loss':<20} "
+                            mssg += f"{'Occulusion Loss':<20} "
                             mssg += f"{'Entropy Loss':<20} "
                         else:
                             name = "Train PSNR"
@@ -470,8 +470,11 @@ class LocalWriter:
                     if "Metrics" in name:
                         v = f"{v['psnr'].item():0.6f}"
                     else:
-                        dis_loss = f"{v['distortion_loss'].item():0.6f}"
-                        curr_mssg += f"{dis_loss:<20} "
+                        if 'occlusion_loss_nw' in v:
+                            dis_loss = f"{v['occlusion_loss_nw'].item():0.6f}"
+                            curr_mssg += f"{dis_loss:<20} "
+                        else:
+                            curr_mssg += f"{'Null':<20} "
                         if 'entropy_loss' in v:
                             ent_loss = f"{v['entropy_loss'].item():0.6f}"
                             curr_mssg += f"{ent_loss:<20} "

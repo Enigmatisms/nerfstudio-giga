@@ -44,6 +44,7 @@ from nerfstudio.model_components.losses import (
     distortion_loss,
     entropy_loss,
     interlevel_loss,
+    occlusion_regularization,
     orientation_loss,
     pred_normal_loss,
 )
@@ -132,12 +133,25 @@ class NerfactoModelConfig(ModelConfig):
     use_entropy_loss: bool = False
     """Whether to use entropy loss to regularize scene density."""
     entropy_threshold: float = 0.2
-    """Entropy threshold for masking empty rays"""
+    """Entropy threshold for masking empty rays."""
     entropy_loss_mult: float = 0.001
-    """Entropy loss multiplier"""
-    sample_unseen: bool = False
-    """Whether to sample unseen pose for density regularization."""
-
+    """Entropy loss multiplier."""
+    use_occ_regularization: bool = False
+    """Whether to use occlusion regularization."""
+    min_occ_threshold: float = 0.2
+    """Minimum occlusion threshold for regularing near camera density."""
+    max_occ_threshold: float = 0.4
+    """Maximum occlusion threshold for regularing near camera density."""
+    min_occ_loss_mult: float = 0.0001
+    """Minimum occlusion loss multiplier for regularing near camera density."""
+    max_occ_loss_mult: float = 0.001
+    """Maximum occlusion loss multiplier for regularing near camera density."""
+    occ_reg_iters: int = 30000
+    """Number of iterations to use for occlusion regularization."""
+    sigma_perturb_std: float = 0.0
+    """Standard deviation for applying perturbation for density."""
+    sigma_perturb_iter: int = 0
+    """Set sigma perturbation to 0. when reaching this value."""
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -170,6 +184,7 @@ class NerfactoModel(Model):
             num_images=self.num_train_data,
             use_pred_normals=self.config.predict_normals,
             use_average_appearance_embedding=self.config.use_average_appearance_embedding,
+            sigma_perterb_std=self.config.sigma_perturb_std
         )
 
         self.density_fns = []
@@ -233,6 +248,7 @@ class NerfactoModel(Model):
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
         self.ssim = structural_similarity_index_measure
         self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True)
+        self.iter_cnt = 0
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         param_groups = {}
@@ -272,6 +288,9 @@ class NerfactoModel(Model):
         return callbacks
 
     def get_outputs(self, ray_bundle: RayBundle):
+        if self.iter_cnt == self.config.sigma_perturb_iter:
+            self.field.set_sigma_std(0.0)
+        self.iter_cnt += 1
         ray_samples, weights_list, ray_samples_list = self.proposal_sampler(ray_bundle, density_fns=self.density_fns)
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
         weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY])
@@ -313,6 +332,13 @@ class NerfactoModel(Model):
         if self.training and self.config.use_entropy_loss:
             outputs["rendered_entropy_loss"] = entropy_loss(ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], self.config.entropy_threshold)
 
+        if self.training and self.config.use_occ_regularization:
+            if self.iter_cnt <= self.config.occ_reg_iters:
+                iter_ratio = self.iter_cnt / self.config.occ_reg_iters
+                threshold = self.config.min_occ_threshold * iter_ratio + self.config.max_occ_threshold * (1. - iter_ratio)
+                outputs["rendered_occ_regularization"] = occlusion_regularization(
+                    ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], threshold)
+
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
@@ -351,6 +377,15 @@ class NerfactoModel(Model):
                 loss_dict["entropy_loss"] = self.config.entropy_loss_mult * torch.mean(
                     outputs["rendered_entropy_loss"]
                 )
+
+            if self.config.use_occ_regularization and "rendered_occ_regularization" in outputs:
+                iter_ratio = self.iter_cnt / self.config.occ_reg_iters
+                occlusion_loss_mult = self.config.min_occ_loss_mult * iter_ratio + self.config.max_occ_loss_mult * (1. - iter_ratio)
+                occ_loss = torch.mean(
+                    outputs["rendered_occ_regularization"]
+                )
+                loss_dict["occlusion_loss"] = occlusion_loss_mult * occ_loss
+                loss_dict["occlusion_loss_nw"] = occ_loss.detach()          # no multiplier
         return loss_dict
 
     def get_image_metrics_and_images(
