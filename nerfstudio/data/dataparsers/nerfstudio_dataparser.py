@@ -37,7 +37,7 @@ from nerfstudio.data.scene_box import SceneBox
 from nerfstudio.utils.io import load_from_json
 
 CONSOLE = Console(width=120)
-MAX_AUTO_RESOLUTION = 1600
+MAX_AUTO_RESOLUTION = 3200
 
 
 @dataclass
@@ -233,7 +233,6 @@ class Nerfstudio(DataParser):
         if self.config.auto_scale_poses:
             scale_factor /= float(torch.max(torch.abs(poses[:, :3, 3])))
         scale_factor *= self.config.scale_factor
-
         poses[:, :3, 3] *= scale_factor
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.

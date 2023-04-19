@@ -140,7 +140,7 @@ def run_colmap(
     feature_matcher_cmd = [
         f"{colmap_cmd} {matching_method}_matcher",
         f"--database_path {colmap_dir / 'database.db'}",
-        f"--SiftMatching.use_gpu {int(gpu)}",
+        f"--SiftMatching.use_gpu {int(gpu)}"
     ]
     if matching_method == "vocab_tree":
         vocab_tree_filename = get_vocab_tree()
@@ -158,7 +158,20 @@ def run_colmap(
         f"--database_path {colmap_dir / 'database.db'}",
         f"--image_path {image_dir}",
         f"--output_path {sparse_dir}",
+        "--Mapper.min_num_matches 10",
+        "--Mapper.min_model_size 8",
+        "--Mapper.ba_local_num_images 5",
+        "--Mapper.ba_global_max_num_iterations 64",
+        "--Mapper.init_min_num_inliers 80",
+        "--Mapper.tri_continue_max_angle_error 2.4",
+        "--Mapper.filter_max_reproj_error 5",
+        "--Mapper.abs_pose_min_num_inliers 24"
     ]
+
+    # colmap patch_match_stereo \
+    # --workspace_path $DATASET_PATH/dense \
+    # --workspace_format COLMAP \
+    # --PatchMatchStereo.geom_consistency true
     if colmap_version >= 3.7:
         mapper_cmd.append("--Mapper.ba_global_function_tolerance 1e-6")
 
@@ -177,6 +190,7 @@ def run_colmap(
             f"--input_path {sparse_dir}/0",
             f"--output_path {sparse_dir}/0",
             "--BundleAdjustment.refine_principal_point 1",
+            "--BundleAdjustment.max_num_iterations 128"
         ]
         run_command(" ".join(bundle_adjuster_cmd), verbose=verbose)
     CONSOLE.log("[bold green]:tada: Done refining intrinsics.")
@@ -531,6 +545,8 @@ def create_sfm_depth(
     else:
         iter_images = iter(im_id_to_image.items())
 
+    # FIXME: does HLOC use this function to output? If so, some problems here must be resolved
+
     image_id_to_depth_path = {}
     for im_id, im_data in iter_images:
         # TODO(1480) BEGIN delete when abandoning colmap_parsing_utils
@@ -576,6 +592,7 @@ def create_sfm_depth(
             & (uv[:, 1] < H)
         )
         z = z[idx]
+        print(f"Z value: min = {z.min()}, max = {z.max()}, mean = {z.mean()}, shape = {z.shape}, scaling: {depth_scale_to_integer_factor}")
         uv = uv[idx]
 
         uu, vv = uv[:, 0].astype(int), uv[:, 1].astype(int)
@@ -585,10 +602,16 @@ def create_sfm_depth(
         # E.g. if `depth` is metric and in units of meters, and `depth_scale_to_integer_factor`
         # is 1000, then `depth_img` will be integer millimeters.
         depth_img = (depth_scale_to_integer_factor * depth).astype(np.uint16)
+        nan_index = np.isnan(depth_img)
+        inf_index = np.isinf(depth_img)
+        if nan_index.any() or inf_index.any():
+            CONSOLE.log("[bold red]:skull: Possible invalid value encountered. Removing invalid values by setting them to 0.")
+            depth_img[nan_index | inf_index] = 0
 
         out_name = str(im_data.name)
+        out_name = f"{out_name[:out_name.rfind('.')]}.npy"
         depth_path = output_dir / out_name
-        cv2.imwrite(str(depth_path), depth_img)
+        np.save(depth_path, depth_img)
 
         image_id_to_depth_path[im_id] = depth_path
 

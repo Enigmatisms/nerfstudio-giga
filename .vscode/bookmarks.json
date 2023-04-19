@@ -4,6 +4,11 @@
 			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
 			"bookmarks": [
 				{
+					"line": 512,
+					"column": 12,
+					"label": "Next train base implementation"
+				},
+				{
 					"line": 518,
 					"column": 38,
 					"label": "Generate ray bundles and refine pose"
@@ -49,9 +54,59 @@
 					"label": "COLMAP utilities"
 				},
 				{
-					"line": 468,
+					"line": 482,
 					"column": 14,
 					"label": "Output depth image"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/data/pixel_samplers.py",
+			"bookmarks": [
+				{
+					"line": 184,
+					"column": 13,
+					"label": "Base pixel sampler"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/models/depth_nerfacto.py",
+			"bookmarks": [
+				{
+					"line": 76,
+					"column": 24,
+					"label": "depth NeRFacto metric getting"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/data/datasets/depth_dataset.py",
+			"bookmarks": [
+				{
+					"line": 48,
+					"column": 33,
+					"label": "Scaling factor"
+				},
+				{
+					"line": 49,
+					"column": 47,
+					"label": "Depth dataset load depth image"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/data/dataparsers/nerfstudio_dataparser.py",
+			"bookmarks": [
+				{
+					"line": 39,
+					"column": 9,
+					"label": "Max auto resolution"
+				},
+				{
+					"line": 235,
+					"column": 35,
+					"label": "Where the scaling factor comes from"
 				}
 			]
 		}

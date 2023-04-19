@@ -175,12 +175,12 @@ method_configs["depth-nerfacto"] = TrainerConfig(
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
+            "scheduler": ExponentialDecaySchedulerConfig(lr_final=5e-4, max_steps=250000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
-            "scheduler": None,
+            "optimizer": AdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
+            "scheduler": ExponentialDecaySchedulerConfig(lr_final=5e-4, max_steps=250000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),

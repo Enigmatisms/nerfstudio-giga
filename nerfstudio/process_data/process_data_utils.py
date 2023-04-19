@@ -351,14 +351,22 @@ def downscale_images(
                 if f.is_dir():
                     continue
                 filename = f.name
-                nn_flag = "" if not nearest_neighbor else ":flags=neighbor"
-                ffmpeg_cmd = [
-                    f'ffmpeg -y -noautorotate -i "{image_dir / filename}" ',
-                    f"-q:v 2 -vf scale=iw/{downscale_factor}:ih/{downscale_factor}{nn_flag} ",
-                    f'"{downscale_dir / filename}"',
-                ]
-                ffmpeg_cmd = " ".join(ffmpeg_cmd)
-                run_command(ffmpeg_cmd, verbose=verbose)
+                if filename.endswith(".npy"):       # not an image file, we can not use ffmpeg command
+                    file_path = image_dir / filename
+                    img_npy = np.load(str(file_path))
+                    img_down_scale = cv2.resize(img_npy, (img_npy.shape[1] // downscale_factor, img_npy.shape[0] // downscale_factor),
+                                0, 0, interpolation = cv2.INTER_NEAREST)
+                    output_dir = downscale_dir / filename
+                    np.save(str(output_dir), img_down_scale)
+                else:
+                    nn_flag = "" if not nearest_neighbor else ":flags=neighbor"
+                    ffmpeg_cmd = [
+                        f'ffmpeg -y -noautorotate -i "{image_dir / filename}" ',
+                        f"-q:v 2 -vf scale=iw/{downscale_factor}:ih/{downscale_factor}{nn_flag} ",
+                        f'"{downscale_dir / filename}"',
+                    ]
+                    ffmpeg_cmd = " ".join(ffmpeg_cmd)
+                    run_command(ffmpeg_cmd, verbose=verbose)
 
     CONSOLE.log("[bold green]:tada: Done downscaling images.")
     downscale_text = [f"[bold blue]{2**(i+1)}x[/bold blue]" for i in range(num_downscales)]
