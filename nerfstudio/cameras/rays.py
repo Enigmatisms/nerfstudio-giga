@@ -124,7 +124,8 @@ class RaySamples(TensorDataclass):
     times: Optional[TensorType[..., 1]] = None
     """Times at which rays are sampled"""
 
-    def get_weights(self, densities: TensorType[..., "num_samples", 1]) -> TensorType[..., "num_samples", 1]:
+    def get_weights(self, densities: TensorType[..., "num_samples", 1],
+                    gammas: Optional[TensorType[..., "num_samples", 1]] = None) -> TensorType[..., "num_samples", 1]:
         """Return weights based on predicted densities
 
         Args:
@@ -135,18 +136,35 @@ class RaySamples(TensorDataclass):
         """
 
         delta_density = self.deltas * densities
-        alphas = 1 - torch.exp(-delta_density)
+        alphas = 1 - RaySamples.tr_func(delta_density, gammas)
 
         transmittance = torch.cumsum(delta_density[..., :-1, :], dim=-2)
         transmittance = torch.cat(
             [torch.zeros((*transmittance.shape[:1], 1, 1), device=densities.device), transmittance], dim=-2
         )
-        transmittance = torch.exp(-transmittance)  # [..., "num_samples"]
+        transmittance = RaySamples.tr_func(transmittance, gammas)  # [..., "num_samples"]
 
         weights = alphas * transmittance  # [..., "num_samples"]
         weights = torch.nan_to_num(weights)
-
+        
         return weights
+    
+    @staticmethod
+    def tr_func(delta_density, gamma = None):
+        """Switch between different transmittance functions"""
+        if gamma is None:
+            return torch.exp(-delta_density)
+        else:
+            return RaySamples.vicini_tr(delta_density, gamma).clamp(0, 1)
+
+    @staticmethod
+    def vicini_tr(delta_density, gamma):
+        """Non-exponential transmittance model from Delio Vicini, ACM ToG 2021
+           A non-exponential transmittance model for volumetric scene representations
+           
+           Args: gamma, the parameter controlling the transition between linear / exponential model
+        """
+        return gamma * torch.exp(-delta_density) + (1. - gamma) * torch.relu(1. - delta_density / 2.)
 
     @staticmethod
     def get_weights_and_transmittance_from_alphas(

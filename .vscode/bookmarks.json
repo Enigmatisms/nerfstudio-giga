@@ -114,9 +114,14 @@
 			"path": "nerfstudio/models/nerfacto.py",
 			"bookmarks": [
 				{
-					"line": 253,
+					"line": 262,
 					"column": 56,
 					"label": "Metrics for nerfacto"
+				},
+				{
+					"line": 316,
+					"column": 31,
+					"label": "Render RGB"
 				}
 			]
 		}

@@ -158,6 +158,14 @@ class NerfactoModelConfig(ModelConfig):
     """KL divergence for unseen view regularization"""
     sample_unseen_views: bool = False
     """Whether to sample rays in perturbed unseen views (from train views)"""
+    use_non_exp: bool = False
+    """Whether to use non exponential transmittance model (Vicini, et al. ACM ToG 2021)"""
+    non_exp_gamma_mult: float = -1.
+    """Non exponential gamma prior multiplier, negative digit means no preference"""
+    non_exp_gamma_tar: float = 0.02
+    """Non exponential gamma prior preference (will learn to match this value)
+       For scenes containing mostly opaque objects, lower value (towards 0) is preferred 
+    """
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -190,7 +198,8 @@ class NerfactoModel(Model):
             num_images=self.num_train_data,
             use_pred_normals=self.config.predict_normals,
             use_average_appearance_embedding=self.config.use_average_appearance_embedding,
-            sigma_perterb_std=self.config.sigma_perturb_std
+            sigma_perterb_std=self.config.sigma_perturb_std,
+            use_non_exp = self.config.use_non_exp
         )
 
         self.density_fns = []
@@ -299,7 +308,9 @@ class NerfactoModel(Model):
         self.iter_cnt += 1
         ray_samples, weights_list, ray_samples_list = self.proposal_sampler(ray_bundle, density_fns=self.density_fns)
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
-        weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY])
+
+        gammas = field_outputs.get(FieldHeadNames.GAMMA, None)
+        weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY], gammas)
         weights_list.append(weights)
         ray_samples_list.append(ray_samples)
 
@@ -351,6 +362,9 @@ class NerfactoModel(Model):
             outputs["rendered_unseen_kl"] = unseen_kl_divergence(
                 ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY])
             outputs["has_unseen_view"] = True
+
+        if self.training and self.config.use_non_exp:
+            outputs["non_exp_gamma"] = field_outputs[FieldHeadNames.GAMMA]
 
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
@@ -417,7 +431,12 @@ class NerfactoModel(Model):
                 loss_dict["occlusion_loss_nw"] = occ_loss.detach()                  # no multiplier and gradient
             if self.config.sample_unseen_views and "rendered_unseen_kl" in outputs:
                 loss_dict["unseen_kl_divergence"] = self.config.kl_divergence_mult * torch.mean(outputs["rendered_unseen_kl"])
-
+            if self.config.use_non_exp and "non_exp_gamma" in outputs:
+                if self.config.non_exp_gamma_mult > 0:
+                    loss_dict["gamma_loss"] = self.config.non_exp_gamma_mult * \
+                        torch.mean((outputs["non_exp_gamma"] - self.config.non_exp_gamma_tar) ** 2)
+                else:
+                    loss_dict["gamma_loss"] = outputs["non_exp_gamma"].detach().mean()
         return loss_dict
 
     def get_image_metrics_and_images(

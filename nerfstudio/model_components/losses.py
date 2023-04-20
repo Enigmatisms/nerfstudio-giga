@@ -267,6 +267,9 @@ def ds_nerf_depth_loss(
 
     loss = -torch.log(weights + EPS) * torch.exp(-((steps - termination_depth[:, None]) ** 2) / (2 * sigma)) * lengths
     loss = loss.sum(-2) * depth_mask
+    if loss.isnan().any():
+        print(f"{weights.isnan().any()}, {sigma.isnan().any()}, {steps.isnan().any()}, {lengths.isnan().any()}, {termination_depth.isnan().any()}, {depth_mask.shape}")
+        print(f"{weights.min()}, {weights.max()}, {weights.mean()}, {EPS}, {sigma.min()}, {sigma.max()}, {sigma.mean()}")
     return torch.mean(loss)
 
 

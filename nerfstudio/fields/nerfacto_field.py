@@ -79,6 +79,7 @@ class TCNNNerfactoField(Field):
         use_pred_normals: whether to use predicted normals
         use_average_appearance_embedding: whether to use average appearance embedding or zeros for inference
         spatial_distortion: spatial distortion to apply to the scene
+        use_non_exp: Whether to use non-exponential transmittance model
     """
 
     def __init__(
@@ -105,11 +106,15 @@ class TCNNNerfactoField(Field):
         sigma_perterb_std: float = 0.0,
         use_average_appearance_embedding: bool = False,
         spatial_distortion: SpatialDistortion = None,
+        use_non_exp: bool = False
     ) -> None:
         super().__init__()
 
         self.register_buffer("aabb", aabb)
         self.geo_feat_dim = geo_feat_dim
+        self.use_non_exp = use_non_exp
+        if use_non_exp:         # one extra dimension is for gamma prediction
+            self.geo_feat_dim -= 1
 
         self.register_buffer("max_res", torch.tensor(max_res))
         self.register_buffer("num_levels", torch.tensor(num_levels))
@@ -146,7 +151,7 @@ class TCNNNerfactoField(Field):
         # 能否做到对不同层的 Hash encoding 进行不同的 regularization？
         self.mlp_base = tcnn.NetworkWithInputEncoding(
             n_input_dims=3,
-            n_output_dims=1 + self.geo_feat_dim,
+            n_output_dims=1 + self.geo_feat_dim + (1 if use_non_exp else 0),
             encoding_config={
                 "otype": "HashGrid",
                 "n_levels": num_levels,
@@ -244,9 +249,7 @@ class TCNNNerfactoField(Field):
         positions_flat = positions.view(-1, 3)
         h = self.mlp_base(positions_flat).view(*ray_samples.frustums.shape, -1)
 
-        # It seems that input is never encoded and density is output directly
-        # We should find a way to regularize high-frequency output here
-        density_before_activation, base_mlp_out = torch.split(h, [1, self.geo_feat_dim], dim=-1)
+        density_before_activation, base_mlp_out = torch.split(h, [1, self.geo_feat_dim + (1 if self.use_non_exp else 0)], dim=-1)
         if self.sigma_perterb_std > 1e-7:                   # add noise to regularize output density
             density_before_activation = density_before_activation + torch.randn_like(
                 density_before_activation, device = base_mlp_out.device, dtype = base_mlp_out.dtype) * self.sigma_perterb_std
@@ -269,6 +272,9 @@ class TCNNNerfactoField(Field):
         outputs = {}
         if ray_samples.camera_indices is None:
             raise AttributeError("Camera indices are not provided.")
+        if self.use_non_exp:
+            spa_gammas, density_embedding = density_embedding.split([1, self.geo_feat_dim], dim=-1)
+            outputs[FieldHeadNames.GAMMA] = torch.sigmoid(spa_gammas)       # gamma should be in range [0, 1]
         camera_indices = ray_samples.camera_indices.squeeze()
         directions = shift_directions_for_tcnn(ray_samples.frustums.directions)
         directions_flat = directions.view(-1, 3)
@@ -388,6 +394,7 @@ class TorchNerfactoField(Field):
             field_head.set_in_dim(self.mlp_head.get_out_dim())  # type: ignore
 
     def get_density(self, ray_samples: RaySamples) -> Tuple[TensorType, TensorType]:
+        # FIXME: for now I skip the implementation for Pytorch
         if self.spatial_distortion is not None:
             positions = ray_samples.frustums.get_positions()
             positions = self.spatial_distortion(positions)

@@ -438,10 +438,10 @@ class LocalWriter:
                         if "Loss" in name:
                             mssg += f"{'Occulusion Loss':<20} "
                             mssg += f"{'Entropy Loss':<20} "
-                            mssg += f"{'KL Divergence':<20} "
+                            mssg += f"{'Gamma Mean':<20} "
                         else:
-                            name = "Train PSNR"
-                            mssg += f"{name:<20} "
+                            mssg += f"{'Train PSNR':<20} "
+                            mssg += f"{'Train SSIM':<20} "
                     else:
                         mssg += f"{name:<20} "
             self.past_mssgs[0] = mssg
@@ -469,7 +469,9 @@ class LocalWriter:
                     v = human_format(v)
                 elif "Dict" in name:
                     if "Metrics" in name:
-                        v = f"{v['psnr'].item():0.6f}"
+                        val = f"{v['psnr'].item():0.6f}"
+                        curr_mssg += f"{val:<20} "
+                        v = f"{v['ssim'].item():0.6f}"
                     else:
                         if 'occlusion_loss_nw' in v:
                             dis_loss = f"{v['occlusion_loss_nw'].item():0.6f}"
@@ -481,8 +483,8 @@ class LocalWriter:
                             curr_mssg += f"{ent_loss:<20} "
                         else:
                             curr_mssg += f"{'Null':<20} "
-                        if 'unseen_kl_divergence' in v:
-                            kl_div = f"{v['unseen_kl_divergence'].item():0.6f}"
+                        if 'gamma_loss' in v:
+                            kl_div = f"{v['gamma_loss'].item():0.6f}"
                             curr_mssg += f"{kl_div:<20} "
                         else:
                             curr_mssg += f"{'Null':<20} "

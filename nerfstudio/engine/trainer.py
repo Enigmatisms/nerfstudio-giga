@@ -405,6 +405,10 @@ class Trainer:
         with torch.autocast(device_type=cpu_or_cuda_str, enabled=self.mixed_precision):
             _, loss_dict, metrics_dict = self.pipeline.get_train_loss_dict(step=step)
             loss = functools.reduce(torch.add, loss_dict.values())
+            if loss.isnan():
+                for key, val in loss_dict.items():
+                    print(f"{key} = {val}")
+                input("Press any key to continue")
         self.grad_scaler.scale(loss).backward()  # type: ignore
         self.optimizers.optimizer_scaler_step_all(self.grad_scaler)
 
