@@ -191,6 +191,8 @@ class RayBundle(TensorDataclass):
     """Additional metadata or data needed for interpolation, will mimic shape of rays"""
     times: Optional[TensorType[..., 1]] = None
     """Times at which rays are sampled"""
+    has_unseen: bool = False
+    """Whether the current ray bundle has image RGB supervision (could be generated from perturbing train-view rays)"""
 
     def set_camera_indices(self, camera_index: int) -> None:
         """Sets all the camera indices to a specific camera index.

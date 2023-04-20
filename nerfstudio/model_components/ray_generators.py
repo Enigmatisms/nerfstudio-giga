@@ -15,6 +15,11 @@
 """
 Ray generator.
 """
+import random
+
+import numpy as np
+import torch
+from scipy.spatial.transform import Rotation as Rot
 from torch import nn
 from torchtyping import TensorType
 
@@ -58,4 +63,72 @@ class RayGenerator(nn.Module):
             coords=coords,
             camera_opt_to_camera=camera_opt_to_camera,
         )
+        return ray_bundle
+
+class PerturbRayGenerator(RayGenerator):
+    """This ray generator aims to generate some rays from an unseen view
+        The idea comes from Info-NeRF, using KL divergence between seen and 
+        unseen views to regularize density in the space.
+        For rays generated from unseen poses, there will be no RGB supervision, 
+        nor is pose refinement here meaningful, therefore we manually disable 
+        the gradient flow during forward-pass
+    """
+
+    def __init__(self,
+            cameras: Cameras, pose_optimizer: CameraOptimizer,
+            perturb_sigma: float = 1.5, random_ratio: float = 0.2, random_seed: int = 114514
+        ) -> None:
+        super().__init__(cameras, pose_optimizer)
+        self.perturb_sigma = perturb_sigma
+        self.random_ratio = random_ratio            # probability of sampling a ray bundle with unseen views
+        random.seed(random_seed)
+
+    def forward(self, ray_indices: TensorType["num_rays", 3]) -> RayBundle:
+        """Index into the cameras to generate the rays.
+
+        Args:
+            ray_indices: Contains camera, row, and col indices for target rays.
+        """
+        c = ray_indices[:, 0]  # camera indices
+        y = ray_indices[:, 1]  # row indices
+        x = ray_indices[:, 2]  # col indices
+        coords = self.image_coords[y, x]
+
+        # This is ray generator, for rays sampled from unseen poses, we need to skip pose refining
+
+        camera_opt_to_camera = self.pose_optimizer(c)
+
+        # c shape (4096), coords shape (4096, 2), ray_indices (4096, 3), camera_opt_to_camera (4096, 3, 4)
+        if random.random() > self.random_ratio:         # Fallback to RayGenerator
+            ray_bundle: RayBundle = self.cameras.generate_rays(
+                camera_indices=c.unsqueeze(-1),
+                coords=coords,
+                camera_opt_to_camera=camera_opt_to_camera,
+            )
+            ray_bundle.has_unseen = False
+        else:
+            camera_opt_to_camera = camera_opt_to_camera.detach()    # disable pose refinement when sampling unseen views
+            half_num    = ray_indices.shape[0] >> 1
+            half_c      = c[:half_num]
+            half_coords = coords[:half_num]
+            half_exts   = camera_opt_to_camera[:half_num]       # may be the gradient should be masked
+
+            trunc_degs = np.random.normal(0, self.perturb_sigma, (half_num, 3)).clip(-4.5, 4.5)
+            rots = Rot.from_euler('xyz', trunc_degs, degrees = True)
+            perturb_rotms = rots.as_matrix()
+            perturb_rots  = torch.from_numpy(perturb_rotms).to(half_exts.device)
+            perturbed_trs = half_exts.clone()
+            perturbed_trs[..., :-1] = perturb_rots @ perturbed_trs[..., :-1]            # only rotate
+
+            half_c = half_c[None, ...].expand(2, -1).reshape(-1)                        # duplicate the camera indices
+            half_coords = half_coords[None, ...].expand(2, -1, -1).reshape(-1, 2)       # duplicate the image coordinates
+            camera_opt_to_camera = torch.cat((half_exts, perturbed_trs), dim = 0)
+
+            ray_bundle: RayBundle = self.cameras.generate_rays(
+                camera_indices=half_c,
+                coords=half_coords,
+                camera_opt_to_camera=camera_opt_to_camera,
+            )
+            ray_bundle.has_unseen = True
+
         return ray_bundle

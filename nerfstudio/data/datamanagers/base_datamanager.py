@@ -69,7 +69,7 @@ from nerfstudio.data.utils.dataloaders import (
 )
 from nerfstudio.data.utils.nerfstudio_collate import nerfstudio_collate
 from nerfstudio.engine.callbacks import TrainingCallback, TrainingCallbackAttributes
-from nerfstudio.model_components.ray_generators import RayGenerator
+from nerfstudio.model_components.ray_generators import PerturbRayGenerator, RayGenerator
 from nerfstudio.utils.misc import IterableWrapper
 
 CONSOLE = Console(width=120)
@@ -363,6 +363,16 @@ class VanillaDataManagerConfig(DataManagerConfig):
     """
     patch_size: int = 1
     """Size of patch to sample from. If >1, patch-based sampling will be used."""
+    sample_unseen_view: bool = False
+    """Whether to sample rays from perturbed train view (as unseen views). If True, PerturbRayGenerator will be used"""
+    unseen_ratio: float = 0.2
+    """The ratio of unseen view samples (probability of a ray bundle to contain unseen view rays)"""
+    perturb_rot_sigma: float = 1.5
+    """The perturbing standard deviation of rotation (in degree)"""
+    unseen_sample_iter: int = 150000
+    """Maximum number of iteration to sample unseen views. Iteration number to sample unseen views is expected to be
+    <unseen_sample_iter> * (unseen_ratio)
+    """
 
 
 class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
@@ -471,10 +481,17 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.train_camera_optimizer = self.config.camera_optimizer.setup(
             num_cameras=self.train_dataset.cameras.size, device=self.device
         )
-        self.train_ray_generator = RayGenerator(
-            self.train_dataset.cameras.to(self.device),
-            self.train_camera_optimizer,
-        )
+        if self.config.sample_unseen_view:
+            self.train_ray_generator = PerturbRayGenerator(
+                self.train_dataset.cameras.to(self.device),
+                self.train_camera_optimizer, perturb_sigma = self.config.perturb_rot_sigma,
+                random_ratio = self.config.unseen_ratio
+            )
+        else:
+            self.train_ray_generator = RayGenerator(
+                self.train_dataset.cameras.to(self.device),
+                self.train_camera_optimizer,
+            )
 
     def setup_eval(self):
         """Sets up the data loader for evaluation"""

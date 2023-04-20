@@ -48,6 +48,7 @@ from nerfstudio.model_components.losses import (
     occlusion_regularization,
     orientation_loss,
     pred_normal_loss,
+    unseen_kl_divergence,
 )
 from nerfstudio.model_components.ray_samplers import (
     ProposalNetworkSampler,
@@ -153,6 +154,10 @@ class NerfactoModelConfig(ModelConfig):
     """Standard deviation for applying perturbation for density."""
     sigma_perturb_iter: int = 0
     """Set sigma perturbation to 0. when reaching this value."""
+    kl_divergence_mult: float = 0.0001
+    """KL divergence for unseen view regularization"""
+    sample_unseen_views: bool = False
+    """Whether to sample rays in perturbed unseen views (from train views)"""
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -328,7 +333,7 @@ class NerfactoModel(Model):
                 field_outputs[FieldHeadNames.NORMALS].detach(),
                 field_outputs[FieldHeadNames.PRED_NORMALS],
             )
-
+        outputs["has_unseen_view"] = False
         # TODO: a new setting for this
         if self.training and self.config.use_entropy_loss:
             outputs["rendered_entropy_loss"] = entropy_loss(ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], self.config.entropy_threshold)
@@ -340,6 +345,13 @@ class NerfactoModel(Model):
                 outputs["rendered_occ_regularization"] = occlusion_regularization(
                     ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], threshold)
 
+        # We do sample unseen views, and a ray_bundle that contains 
+        if self.training and self.config.sample_unseen_views and ray_bundle.has_unseen:
+            # TODO: unseen view sampling should be stoped when a certain iteration number is reached.
+            outputs["rendered_unseen_kl"] = unseen_kl_divergence(
+                ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY])
+            outputs["has_unseen_view"] = True
+
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
@@ -348,7 +360,11 @@ class NerfactoModel(Model):
     def get_metrics_dict(self, outputs, batch):
         metrics_dict = {}
         image = batch["image"].to(self.device)
-        metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
+        if outputs['has_unseen_view']:
+            half_num = image["rgb"].shape[0] >> 1
+            metrics_dict["psnr"] = self.psnr(outputs["rgb"][:half_num], image[:half_num])
+        else:
+            metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
         
         ray_num, channel = outputs["rgb"].shape
         transformed_rgb = outputs["rgb"].reshape(ray_num // 64, 64, channel)
@@ -364,7 +380,11 @@ class NerfactoModel(Model):
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
         loss_dict = {}
         image = batch["image"].to(self.device)
-        loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
+        if outputs['has_unseen_view']:
+            half_num = image["rgb"].shape[0] >> 1
+            loss_dict["rgb_loss"] = self.rgb_loss(image[:half_num], outputs["rgb"][:half_num])
+        else:
+            loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
         if self.training:
             loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
                 outputs["weights_list"], outputs["ray_samples_list"]
@@ -394,7 +414,10 @@ class NerfactoModel(Model):
                     outputs["rendered_occ_regularization"]
                 )
                 loss_dict["occlusion_loss"] = occlusion_loss_mult * occ_loss
-                loss_dict["occlusion_loss_nw"] = occ_loss.detach()          # no multiplier
+                loss_dict["occlusion_loss_nw"] = occ_loss.detach()                  # no multiplier and gradient
+            if self.config.sample_unseen_views and "rendered_unseen_kl" in outputs:
+                loss_dict["unseen_kl_divergence"] = self.config.kl_divergence_mult * outputs["rendered_unseen_kl"]
+
         return loss_dict
 
     def get_image_metrics_and_images(

@@ -162,8 +162,18 @@ def entropy_loss(deltas: TensorType, densities: TensorType, threshold: float = 0
     else:
         return torch.zeros(1, dtype = delta_density.dtype, device = delta_density.device) 
 
+def unseen_kl_divergence(deltas: TensorType, densities: TensorType):
+    """KL divergence for seen/unseen view ray density"""
+    delta_density = torch.relu(deltas * densities)
+    alphas = 1 - torch.exp(-delta_density)
+    alpha_sum = torch.sum(alphas, dim = -2, keepdim = True).clamp_min(1e-7)             # shape (ray_num, 1, 1)
+    alphas.clamp_min_(1e-7)                             # log(0) will be nan, clamping
+    proba = (alphas / alpha_sum).clamp(1e-7, 1e6)       # some numerical guards...
+    half_num = delta_density.shape[0] >> 1
+    return proba[:half_num, ...] * torch.log(proba[:half_num, ...] / proba[half_num:, ...])
 
 def occlusion_regularization(deltas: TensorType, densities: TensorType, threshold: float) -> TensorType:
+    """Occlusion regularization proposed by FreeNeRF (CVPR 2023)"""
     lengths = torch.cumsum(deltas, dim = -2)        # get lengths
     ratios = lengths / lengths[:, -1:, :]           # normalize to [0, 1]
     to_reg = densities[ratios < threshold] 
