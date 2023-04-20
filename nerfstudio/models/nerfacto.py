@@ -40,6 +40,7 @@ from nerfstudio.field_components.spatial_distortions import SceneContraction
 from nerfstudio.fields.density_fields import HashMLPDensityField
 from nerfstudio.fields.nerfacto_field import TCNNNerfactoField
 from nerfstudio.model_components.losses import (
+    HuberLoss,
     MSELoss,
     distortion_loss,
     entropy_loss,
@@ -242,7 +243,7 @@ class NerfactoModel(Model):
         self.normals_shader = NormalsShader()
 
         # TODO: we can opt for more stable loss like Huber, which produces higher PNSR in instant-NGP
-        self.rgb_loss = MSELoss()       # nerf facto uses MSE Loss
+        self.rgb_loss = HuberLoss(0.2)       # nerf facto uses MSE Loss
 
         # metrics
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
@@ -348,6 +349,8 @@ class NerfactoModel(Model):
         metrics_dict = {}
         image = batch["image"].to(self.device)
         metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
+        metrics_dict["ssim"] = self.ssim(outputs["rgb"], image)
+        # metrics_dict["lpips"] = self.lpips(outputs["rgb"], image)         # LPIPS is not evaluated for now
         if self.training:
             metrics_dict["distortion"] = distortion_loss(outputs["weights_list"], outputs["ray_samples_list"])
         return metrics_dict
