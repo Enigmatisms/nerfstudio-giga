@@ -170,7 +170,7 @@ def unseen_kl_divergence(deltas: TensorType, densities: TensorType):
     alphas.clamp_min_(1e-7)                             # log(0) will be nan, clamping
     proba = (alphas / alpha_sum).clamp(1e-7, 1e6)       # some numerical guards...
     half_num = delta_density.shape[0] >> 1
-    return proba[:half_num, ...] * torch.log(proba[:half_num, ...] / proba[half_num:, ...])
+    return proba[:half_num, ...] * (torch.log(proba[:half_num, ...]) - torch.log(proba[half_num:, ...]))
 
 def occlusion_regularization(deltas: TensorType, densities: TensorType, threshold: float) -> TensorType:
     """Occlusion regularization proposed by FreeNeRF (CVPR 2023)"""

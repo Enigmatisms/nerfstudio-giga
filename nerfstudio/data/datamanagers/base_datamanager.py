@@ -367,8 +367,8 @@ class VanillaDataManagerConfig(DataManagerConfig):
     """Whether to sample rays from perturbed train view (as unseen views). If True, PerturbRayGenerator will be used"""
     unseen_ratio: float = 0.2
     """The ratio of unseen view samples (probability of a ray bundle to contain unseen view rays)"""
-    perturb_rot_sigma: float = 1.5
-    """The perturbing standard deviation of rotation (in degree)"""
+    perturb_rot_sigma: float = 4.5
+    """The perturbing range of rotation (uniform sampling, in degree)"""
     unseen_sample_iter: int = 150000
     """Maximum number of iteration to sample unseen views. Iteration number to sample unseen views is expected to be
     <unseen_sample_iter> * (unseen_ratio)

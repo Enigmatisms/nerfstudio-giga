@@ -4,12 +4,12 @@
 			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
 			"bookmarks": [
 				{
-					"line": 512,
+					"line": 529,
 					"column": 12,
 					"label": "Next train base implementation"
 				},
 				{
-					"line": 518,
+					"line": 535,
 					"column": 38,
 					"label": "Generate ray bundles and refine pose"
 				}
@@ -19,7 +19,7 @@
 			"path": "nerfstudio/model_components/ray_generators.py",
 			"bookmarks": [
 				{
-					"line": 51,
+					"line": 56,
 					"column": 44,
 					"label": "Ray generator"
 				}
@@ -107,6 +107,16 @@
 					"line": 235,
 					"column": 35,
 					"label": "Where the scaling factor comes from"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/models/nerfacto.py",
+			"bookmarks": [
+				{
+					"line": 253,
+					"column": 56,
+					"label": "Metrics for nerfacto"
 				}
 			]
 		}
