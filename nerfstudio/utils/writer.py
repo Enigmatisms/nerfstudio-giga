@@ -438,6 +438,7 @@ class LocalWriter:
                         if "Loss" in name:
                             mssg += f"{'Occulusion Loss':<20} "
                             mssg += f"{'Entropy Loss':<20} "
+                            mssg += f"{'KL Divergence':<20} "
                         else:
                             name = "Train PSNR"
                             mssg += f"{name:<20} "
@@ -478,6 +479,11 @@ class LocalWriter:
                         if 'entropy_loss' in v:
                             ent_loss = f"{v['entropy_loss'].item():0.6f}"
                             curr_mssg += f"{ent_loss:<20} "
+                        else:
+                            curr_mssg += f"{'Null':<20} "
+                        if 'unseen_kl_divergence' in v:
+                            kl_div = f"{v['unseen_kl_divergence'].item():0.6f}"
+                            curr_mssg += f"{kl_div:<20} "
                         else:
                             curr_mssg += f"{'Null':<20} "
                         continue

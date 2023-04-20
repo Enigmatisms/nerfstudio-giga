@@ -361,7 +361,7 @@ class NerfactoModel(Model):
         metrics_dict = {}
         image = batch["image"].to(self.device)
         if outputs['has_unseen_view']:
-            half_num = image["rgb"].shape[0] >> 1
+            half_num = image.shape[0] >> 1
             metrics_dict["psnr"] = self.psnr(outputs["rgb"][:half_num], image[:half_num])
         else:
             metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
@@ -381,7 +381,7 @@ class NerfactoModel(Model):
         loss_dict = {}
         image = batch["image"].to(self.device)
         if outputs['has_unseen_view']:
-            half_num = image["rgb"].shape[0] >> 1
+            half_num = image.shape[0] >> 1
             loss_dict["rgb_loss"] = self.rgb_loss(image[:half_num], outputs["rgb"][:half_num])
         else:
             loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
@@ -416,7 +416,7 @@ class NerfactoModel(Model):
                 loss_dict["occlusion_loss"] = occlusion_loss_mult * occ_loss
                 loss_dict["occlusion_loss_nw"] = occ_loss.detach()                  # no multiplier and gradient
             if self.config.sample_unseen_views and "rendered_unseen_kl" in outputs:
-                loss_dict["unseen_kl_divergence"] = self.config.kl_divergence_mult * outputs["rendered_unseen_kl"]
+                loss_dict["unseen_kl_divergence"] = self.config.kl_divergence_mult * torch.mean(outputs["rendered_unseen_kl"])
 
         return loss_dict
 

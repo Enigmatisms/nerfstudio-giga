@@ -76,11 +76,14 @@ class PerturbRayGenerator(RayGenerator):
 
     def __init__(self,
             cameras: Cameras, pose_optimizer: CameraOptimizer,
-            perturb_sigma: float = 1.5, random_ratio: float = 0.2, random_seed: int = 114514
+            perturb_sigma: float = 1.5, random_ratio: float = 0.2, 
+            max_perturb_iter: float = 150000, random_seed: int = 114514
         ) -> None:
         super().__init__(cameras, pose_optimizer)
         self.perturb_sigma = perturb_sigma
         self.random_ratio = random_ratio            # probability of sampling a ray bundle with unseen views
+        self.max_perturb_iter = max_perturb_iter
+        self.iter_cnt = 0
         random.seed(random_seed)
 
     def forward(self, ray_indices: TensorType["num_rays", 3]) -> RayBundle:
@@ -89,6 +92,7 @@ class PerturbRayGenerator(RayGenerator):
         Args:
             ray_indices: Contains camera, row, and col indices for target rays.
         """
+        self.iter_cnt += 1
         c = ray_indices[:, 0]  # camera indices
         y = ray_indices[:, 1]  # row indices
         x = ray_indices[:, 2]  # col indices
@@ -99,7 +103,7 @@ class PerturbRayGenerator(RayGenerator):
         camera_opt_to_camera = self.pose_optimizer(c)
 
         # c shape (4096), coords shape (4096, 2), ray_indices (4096, 3), camera_opt_to_camera (4096, 3, 4)
-        if random.random() > self.random_ratio:         # Fallback to RayGenerator
+        if random.random() > self.random_ratio or self.iter_cnt > self.max_perturb_iter:         # Fallback to RayGenerator
             ray_bundle: RayBundle = self.cameras.generate_rays(
                 camera_indices=c.unsqueeze(-1),
                 coords=coords,
@@ -116,11 +120,11 @@ class PerturbRayGenerator(RayGenerator):
             trunc_degs = np.random.normal(0, self.perturb_sigma, (half_num, 3)).clip(-4.5, 4.5)
             rots = Rot.from_euler('xyz', trunc_degs, degrees = True)
             perturb_rotms = rots.as_matrix()
-            perturb_rots  = torch.from_numpy(perturb_rotms).to(half_exts.device)
+            perturb_rots  = torch.from_numpy(perturb_rotms).to(half_exts.device).to(half_exts.dtype)
             perturbed_trs = half_exts.clone()
             perturbed_trs[..., :-1] = perturb_rots @ perturbed_trs[..., :-1]            # only rotate
 
-            half_c = half_c[None, ...].expand(2, -1).reshape(-1)                        # duplicate the camera indices
+            half_c = half_c[None, ...].expand(2, -1).reshape(-1, 1)                        # duplicate the camera indices
             half_coords = half_coords[None, ...].expand(2, -1, -1).reshape(-1, 2)       # duplicate the image coordinates
             camera_opt_to_camera = torch.cat((half_exts, perturbed_trs), dim = 0)
 
