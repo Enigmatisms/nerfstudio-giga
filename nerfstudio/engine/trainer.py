@@ -408,7 +408,7 @@ class Trainer:
             if loss.isnan():
                 for key, val in loss_dict.items():
                     print(f"{key} = {val}")
-                input("Press any key to continue")
+                # input("Press any key to continue")
         self.grad_scaler.scale(loss).backward()  # type: ignore
         self.optimizers.optimizer_scaler_step_all(self.grad_scaler)
 

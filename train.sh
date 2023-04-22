@@ -1,36 +1,36 @@
 ns-train depth-nerfacto \
     --data ../dataset/images_and_cams/DayaTemple/daya_igev/transforms.json \
-    --logging.local-writer.max-log-size 16 \
+    --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 20 \
     --pipeline.model.hidden-dim 64 \
-    --pipeline.model.distortion-loss-mult 0.00000001 \
+    --pipeline.model.distortion-loss-mult 0.002 \
     --pipeline.model.num-nerf-samples-per-ray 64 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
-    --pipeline.model.collider-params near_plane 0.1 far_plane 10.0 \
     --pipeline.model.background-color last_sample \
+    --pipeline.model.use-entropy-loss False \
     --pipeline.model.entropy-threshold 0.005 \
     --pipeline.model.entropy-loss-mult 0.001 \
-    --pipeline.model.use-entropy-loss True \
     --pipeline.model.use-occ-regularization False \
     --pipeline.model.min-occ-threshold 0.1 \
     --pipeline.model.max-occ-threshold 0.3 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
     --pipeline.model.max-occ-loss_mult 0.0007 \
     --pipeline.model.occ-reg-iters 50000 \
-    --pipeline.model.sigma-perturb-std 0.1 \
-    --pipeline.model.sigma-perturb-iter 10000 \
-    --pipeline.model.min-depth-loss-mult 0.0001 \
-    --pipeline.model.max-depth-loss-mult 0.005 \
+    --pipeline.model.sigma-perturb-std 0.0 \
+    --pipeline.model.sigma-perturb-iter 0 \
+    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.max-depth-loss-mult 1e-3 \
     --pipeline.model.depth-loss-iter 100000 \
-    --pipeline.model.depth-sigma 0.05 \
-    --pipeline.model.depth-loss-type URF \
-    --pipeline.model.kl-divergence-mult 0.1 \
+    --pipeline.model.depth-sigma 0.01 \
+    --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
+    --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.model.use-non-exp False \
     --pipeline.model.non-exp-gamma-mult -1 \
     --pipeline.model.non-exp-gamma-tar 0.03 \
     --pipeline.datamanager.skip-eval True \
-    --pipeline.datamanager.intrinsic-scale-factor 0.125 \
-    --max-num-iterations 300000 
+    --pipeline.datamanager.intrinsic-scale-factor 0.25 \
+    --viewer.quit-on-train-completion True \
+    --max-num-iterations 150000
