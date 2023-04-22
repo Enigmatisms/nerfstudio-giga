@@ -4,12 +4,12 @@
 			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
 			"bookmarks": [
 				{
-					"line": 529,
+					"line": 543,
 					"column": 12,
 					"label": "Next train base implementation"
 				},
 				{
-					"line": 535,
+					"line": 549,
 					"column": 38,
 					"label": "Generate ray bundles and refine pose"
 				}
@@ -74,7 +74,7 @@
 			"path": "nerfstudio/models/depth_nerfacto.py",
 			"bookmarks": [
 				{
-					"line": 76,
+					"line": 83,
 					"column": 24,
 					"label": "depth NeRFacto metric getting"
 				}
@@ -84,12 +84,12 @@
 			"path": "nerfstudio/data/datasets/depth_dataset.py",
 			"bookmarks": [
 				{
-					"line": 48,
+					"line": 50,
 					"column": 33,
 					"label": "Scaling factor"
 				},
 				{
-					"line": 49,
+					"line": 51,
 					"column": 47,
 					"label": "Depth dataset load depth image"
 				}
@@ -104,7 +104,12 @@
 					"label": "Max auto resolution"
 				},
 				{
-					"line": 235,
+					"line": 62,
+					"column": 11,
+					"label": "Train split fraction could be disabled"
+				},
+				{
+					"line": 236,
 					"column": 35,
 					"label": "Where the scaling factor comes from"
 				}
@@ -114,14 +119,44 @@
 			"path": "nerfstudio/models/nerfacto.py",
 			"bookmarks": [
 				{
-					"line": 262,
+					"line": 263,
 					"column": 56,
 					"label": "Metrics for nerfacto"
 				},
 				{
-					"line": 316,
+					"line": 322,
 					"column": 31,
 					"label": "Render RGB"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/configs/method_configs.py",
+			"bookmarks": [
+				{
+					"line": 146,
+					"column": 45,
+					"label": "what is RAdam"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/data/datamanagers/depth_datamanager.py",
+			"bookmarks": [
+				{
+					"line": 44,
+					"column": 20,
+					"label": "Create evaluation dataset should be disabled"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/data/datasets/base_dataset.py",
+			"bookmarks": [
+				{
+					"line": 55,
+					"column": 20,
+					"label": "get numpy images"
 				}
 			]
 		}

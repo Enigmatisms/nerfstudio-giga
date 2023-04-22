@@ -37,7 +37,7 @@ from nerfstudio.data.scene_box import SceneBox
 from nerfstudio.utils.io import load_from_json
 
 CONSOLE = Console(width=120)
-MAX_AUTO_RESOLUTION = 3200
+MAX_AUTO_RESOLUTION = 1600
 
 
 @dataclass
@@ -64,7 +64,8 @@ class NerfstudioDataParserConfig(DataParserConfig):
     """The fraction of images to use for training. The remaining images are for eval."""
     depth_unit_scale_factor: float = 1e-3
     """Scales the depth values to meters. Default value is 0.001 for a millimeter to meter conversion."""
-
+    intrinsic_scale_factor: Optional[float] = None
+    """Scale the intrinsic only. For datasets that contains scaled images but not the camera intrinsics"""
 
 @dataclass
 class Nerfstudio(DataParser):
@@ -287,7 +288,14 @@ class Nerfstudio(DataParser):
         )
 
         assert self.downscale_factor is not None
-        cameras.rescale_output_resolution(scaling_factor=1.0 / self.downscale_factor)
+        if self.downscale_factor == 1:
+            # MARK: scaling factor for camera intrinsic_only, config is modified
+            # Only when the image is longer needed to be downscaled, and the intrinsics should be scaled
+            # that it is allowed to use intrinsic_scale_factor
+            if self.config.intrinsic_scale_factor is not None:
+                cameras.rescale_output_resolution(scaling_factor=self.config.intrinsic_scale_factor)
+        else:
+            cameras.rescale_output_resolution(scaling_factor=1.0 / self.downscale_factor)
 
         if "applied_transform" in meta:
             applied_transform = torch.tensor(meta["applied_transform"], dtype=transform_matrix.dtype)

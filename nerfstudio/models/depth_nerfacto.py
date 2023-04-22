@@ -25,6 +25,7 @@ import torch
 
 from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.model_components.losses import DepthLossType, depth_loss
+from nerfstudio.model_components.scheduler import SimpleScheduler
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
 from nerfstudio.utils import colormaps
 
@@ -34,8 +35,12 @@ class DepthNerfactoModelConfig(NerfactoModelConfig):
     """Additional parameters for depth supervision."""
 
     _target: Type = field(default_factory=lambda: DepthNerfactoModel)
-    depth_loss_mult: float = 1e-3
-    """Lambda of the depth loss."""
+    min_depth_loss_mult: float = 1e-4
+    """Multiplier (minimum) of the depth loss."""
+    max_depth_loss_mult: float = 5e-3
+    """Multiplier (maximum) of the depth loss."""
+    depth_loss_iter: int = 50000
+    """Apply depth loss for this number of iteration"""
     is_euclidean_depth: bool = False
     """Whether input depth maps are Euclidean distances (or z-distances)."""
     depth_sigma: float = 0.01
@@ -67,6 +72,8 @@ class DepthNerfactoModel(NerfactoModel):
             self.depth_sigma = torch.tensor([self.config.starting_depth_sigma])
         else:
             self.depth_sigma = torch.tensor([self.config.depth_sigma])
+        self.depth_sch = SimpleScheduler(self.config.max_depth_loss_mult, 
+                    self.config.min_depth_loss_mult, self.config.depth_loss_iter, mode = 'linear', hold_expired = True)
 
     def get_outputs(self, ray_bundle: RayBundle):
         outputs = super().get_outputs(ray_bundle)
@@ -99,8 +106,8 @@ class DepthNerfactoModel(NerfactoModel):
         loss_dict = super().get_loss_dict(outputs, batch, metrics_dict)
         if self.training:
             assert metrics_dict is not None and "depth_loss" in metrics_dict
-            loss_dict["depth_loss"] = self.config.depth_loss_mult * metrics_dict["depth_loss"]
-
+            depth_loss_mult = self.depth_sch.update()
+            loss_dict["depth_loss"] = depth_loss_mult * metrics_dict["depth_loss"]
         return loss_dict
 
     def get_image_metrics_and_images(

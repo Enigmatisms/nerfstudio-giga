@@ -168,19 +168,19 @@ method_configs["depth-nerfacto"] = TrainerConfig(
             train_num_rays_per_batch=4096,
             eval_num_rays_per_batch=4096,
             camera_optimizer=CameraOptimizerConfig(
-                mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
+                mode="SO3xR3", optimizer=RAdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
             ),
         ),
         model=DepthNerfactoModelConfig(eval_num_rays_per_chunk=1 << 15),
     ),
     optimizers={
         "proposal_networks": {
-            "optimizer": AdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
+            "optimizer": RAdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
             "scheduler": ExponentialDecaySchedulerConfig(lr_final=5e-4, max_steps=250000),
         },
         "fields": {
-            "optimizer": AdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
-            "scheduler": ExponentialDecaySchedulerConfig(lr_final=5e-4, max_steps=250000),
+            "optimizer": RAdamOptimizerConfig(lr=1.5e-2, eps=1e-15),
+            "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-4, max_steps=250000),
         },
     },
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),

@@ -436,12 +436,12 @@ class LocalWriter:
                 if name in self.stats_to_track:
                     if "Dict" in name:
                         if "Loss" in name:
+                            mssg += f"{'RGB Loss':<20} "
                             mssg += f"{'Occulusion Loss':<20} "
                             mssg += f"{'Entropy Loss':<20} "
-                            mssg += f"{'Gamma Mean':<20} "
                         else:
+                            mssg += f"{'Depth Loss':<20} "
                             mssg += f"{'Train PSNR':<20} "
-                            mssg += f"{'Train SSIM':<20} "
                     else:
                         mssg += f"{name:<20} "
             self.past_mssgs[0] = mssg
@@ -469,10 +469,18 @@ class LocalWriter:
                     v = human_format(v)
                 elif "Dict" in name:
                     if "Metrics" in name:
-                        val = f"{v['psnr'].item():0.6f}"
-                        curr_mssg += f"{val:<20} "
-                        v = f"{v['ssim'].item():0.6f}"
+                        if 'depth_loss' in v:
+                            val = f"{v['depth_loss'].item():0.6f}"
+                            curr_mssg += f"{val:<20} "
+                        v = f"{v['psnr'].item():0.6f}"
+                        # curr_mssg += f"{val:<20} "
+                        # v = f"{v['ssim'].item():0.6f}"
                     else:
+                        if 'rgb_loss' in v:
+                            dis_loss = f"{v['rgb_loss'].item():0.6f}"
+                            curr_mssg += f"{dis_loss:<20} "
+                        else:
+                            curr_mssg += f"{'Null':<20} "
                         if 'occlusion_loss_nw' in v:
                             dis_loss = f"{v['occlusion_loss_nw'].item():0.6f}"
                             curr_mssg += f"{dis_loss:<20} "
@@ -481,11 +489,6 @@ class LocalWriter:
                         if 'entropy_loss' in v:
                             ent_loss = f"{v['entropy_loss'].item():0.6f}"
                             curr_mssg += f"{ent_loss:<20} "
-                        else:
-                            curr_mssg += f"{'Null':<20} "
-                        if 'gamma_loss' in v:
-                            kl_div = f"{v['gamma_loss'].item():0.6f}"
-                            curr_mssg += f"{kl_div:<20} "
                         else:
                             curr_mssg += f"{'Null':<20} "
                         continue

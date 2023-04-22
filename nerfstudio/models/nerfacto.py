@@ -61,6 +61,7 @@ from nerfstudio.model_components.renderers import (
     RGBRenderer,
 )
 from nerfstudio.model_components.scene_colliders import NearFarCollider
+from nerfstudio.model_components.scheduler import SimpleScheduler
 from nerfstudio.model_components.shaders import NormalsShader
 from nerfstudio.models.base_model import Model, ModelConfig
 from nerfstudio.utils import colormaps
@@ -263,6 +264,11 @@ class NerfactoModel(Model):
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
         self.ssim = structural_similarity_index_measure
         self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True)
+
+        self.occ_mult_sch = SimpleScheduler(self.config.max_occ_loss_mult,
+            self.config.min_occ_loss_mult, self.config.occ_reg_iters)
+        self.occ_thresh_sch = SimpleScheduler(self.config.max_occ_threshold,
+            self.config.min_occ_threshold, self.config.occ_reg_iters)
         self.iter_cnt = 0
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
@@ -350,9 +356,8 @@ class NerfactoModel(Model):
             outputs["rendered_entropy_loss"] = entropy_loss(ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], self.config.entropy_threshold)
 
         if self.training and self.config.use_occ_regularization:
-            if self.iter_cnt <= self.config.occ_reg_iters:
-                iter_ratio = self.iter_cnt / self.config.occ_reg_iters
-                threshold = self.config.min_occ_threshold * iter_ratio + self.config.max_occ_threshold * (1. - iter_ratio)
+            if self.occ_thresh_sch.valid_update():
+                threshold = self.occ_thresh_sch.update()
                 outputs["rendered_occ_regularization"] = occlusion_regularization(
                     ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], threshold)
 
@@ -422,8 +427,7 @@ class NerfactoModel(Model):
                 )
 
             if self.config.use_occ_regularization and "rendered_occ_regularization" in outputs:
-                iter_ratio = self.iter_cnt / self.config.occ_reg_iters
-                occlusion_loss_mult = self.config.min_occ_loss_mult * iter_ratio + self.config.max_occ_loss_mult * (1. - iter_ratio)
+                occlusion_loss_mult = self.occ_mult_sch.update()
                 occ_loss = torch.mean(
                     outputs["rendered_occ_regularization"]
                 )

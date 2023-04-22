@@ -373,6 +373,10 @@ class VanillaDataManagerConfig(DataManagerConfig):
     """Maximum number of iteration to sample unseen views. Iteration number to sample unseen views is expected to be
     <unseen_sample_iter> * (unseen_ratio)
     """
+    skip_eval: bool = False
+    """Whether not to split train and evaluation dataset, use all the images for training. For few shot learning."""
+    intrinsic_scale_factor: Optional[float] = None
+    """Scale the intrinsic only. For datasets that contains scaled images but not the camera intrinsics"""
 
 
 class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
@@ -390,7 +394,7 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
 
     config: VanillaDataManagerConfig
     train_dataset: InputDataset
-    eval_dataset: InputDataset
+    eval_dataset: Optional[InputDataset] = None
     train_dataparser_outputs: DataparserOutputs
     train_pixel_sampler: Optional[PixelSampler] = None
     eval_pixel_sampler: Optional[PixelSampler] = None
@@ -412,6 +416,12 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.test_mode = test_mode
         self.test_split = "test" if test_mode in ["test", "inference"] else "val"
         self.dataparser_config = self.config.dataparser
+        if self.config.skip_eval:
+            self.dataparser_config.train_split_fraction = 1.0
+        if self.config.intrinsic_scale_factor is not None:
+            # FIXME: by Enigmatisms, this is too ugly but I can't pass this directly into the inner config
+            self.dataparser_config.intrinsic_scale_factor = \
+                self.config.intrinsic_scale_factor
         if self.config.data is not None:
             self.config.dataparser.data = Path(self.config.data)
         else:
@@ -420,7 +430,8 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.train_dataparser_outputs = self.dataparser.get_dataparser_outputs(split="train")
 
         self.train_dataset = self.create_train_dataset()
-        self.eval_dataset = self.create_eval_dataset()
+        if not self.config.skip_eval:
+            self.eval_dataset = self.create_eval_dataset()
 
         if self.train_dataparser_outputs is not None:
             cameras = self.train_dataparser_outputs.cameras
@@ -495,37 +506,40 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
 
     def setup_eval(self):
         """Sets up the data loader for evaluation"""
-        assert self.eval_dataset is not None
-        CONSOLE.print("Setting up evaluation dataset...")
-        self.eval_image_dataloader = CacheDataloader(
-            self.eval_dataset,
-            num_images_to_sample_from=self.config.eval_num_images_to_sample_from,
-            num_times_to_repeat_images=self.config.eval_num_times_to_repeat_images,
-            device=self.device,
-            num_workers=self.world_size * 4,
-            pin_memory=True,
-            collate_fn=self.config.collate_fn,
-        )
-        self.iter_eval_image_dataloader = iter(self.eval_image_dataloader)
-        self.eval_pixel_sampler = self._get_pixel_sampler(self.eval_dataset, self.config.eval_num_rays_per_batch)
-        self.eval_camera_optimizer = self.config.camera_optimizer.setup(
-            num_cameras=self.eval_dataset.cameras.size, device=self.device
-        )
-        self.eval_ray_generator = RayGenerator(
-            self.eval_dataset.cameras.to(self.device),
-            self.eval_camera_optimizer,
-        )
-        # for loading full images
-        self.fixed_indices_eval_dataloader = FixedIndicesEvalDataloader(
-            input_dataset=self.eval_dataset,
-            device=self.device,
-            num_workers=self.world_size * 4,
-        )
-        self.eval_dataloader = RandIndicesEvalDataloader(
-            input_dataset=self.eval_dataset,
-            device=self.device,
-            num_workers=self.world_size * 4,
-        )
+        if self.config.skip_eval:
+            CONSOLE.print("Evaluation dataset construction skipped")
+        else:
+            assert self.eval_dataset is not None
+            CONSOLE.print("Setting up evaluation dataset...")
+            self.eval_image_dataloader = CacheDataloader(
+                self.eval_dataset,
+                num_images_to_sample_from=self.config.eval_num_images_to_sample_from,
+                num_times_to_repeat_images=self.config.eval_num_times_to_repeat_images,
+                device=self.device,
+                num_workers=self.world_size * 4,
+                pin_memory=True,
+                collate_fn=self.config.collate_fn,
+            )
+            self.iter_eval_image_dataloader = iter(self.eval_image_dataloader)
+            self.eval_pixel_sampler = self._get_pixel_sampler(self.eval_dataset, self.config.eval_num_rays_per_batch)
+            self.eval_camera_optimizer = self.config.camera_optimizer.setup(
+                num_cameras=self.eval_dataset.cameras.size, device=self.device
+            )
+            self.eval_ray_generator = RayGenerator(
+                self.eval_dataset.cameras.to(self.device),
+                self.eval_camera_optimizer,
+            )
+            # for loading full images
+            self.fixed_indices_eval_dataloader = FixedIndicesEvalDataloader(
+                input_dataset=self.eval_dataset,
+                device=self.device,
+                num_workers=self.world_size * 4,
+            )
+            self.eval_dataloader = RandIndicesEvalDataloader(
+                input_dataset=self.eval_dataset,
+                device=self.device,
+                num_workers=self.world_size * 4,
+            )
 
     def next_train(self, step: int) -> Tuple[RayBundle, Dict]:
         """Returns the next batch of data from the train dataloader."""

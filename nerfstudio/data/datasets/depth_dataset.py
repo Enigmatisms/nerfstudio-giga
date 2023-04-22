@@ -42,7 +42,9 @@ class DepthDataset(InputDataset):
 
     def get_metadata(self, data: Dict) -> Dict:
         filepath = self.depth_filenames[data["image_idx"]]
-        height = int(self._dataparser_outputs.cameras.height[data["image_idx"]])
+        height = int(self.cameras.height[data["image_idx"]])
+
+        # MARK: originally, self._dataparser_outputs.cameras is used, but why? Why can't we just use self.cameras instead?
         width = int(self._dataparser_outputs.cameras.width[data["image_idx"]])
 
         # Scale depth images to meter units and also by scaling applied to cameras
