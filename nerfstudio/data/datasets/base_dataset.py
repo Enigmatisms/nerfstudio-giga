@@ -21,6 +21,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
 
+import cv2
 import numpy as np
 import numpy.typing as npt
 import torch
@@ -65,6 +66,8 @@ class InputDataset(Dataset):
             width, height = pil_image.size
             newsize = (int(width * self.scale_factor), int(height * self.scale_factor))
             pil_image = pil_image.resize(newsize, resample=Image.BILINEAR)
+        else:
+            pil_image = pil_image.resize((self.cameras.width[0], self.cameras.height[0]), resample=Image.BILINEAR)
         image = np.array(pil_image, dtype="uint8")  # shape is (h, w) or (h, w, 3 or 4)
         if len(image.shape) == 2:
             image = image[:, :, None].repeat(3, axis=2)

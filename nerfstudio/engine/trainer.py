@@ -270,7 +270,6 @@ class Trainer:
                     self.save_checkpoint(step)
 
                 writer.write_out_storage()
-
         # save checkpoint at the end of training
         self.save_checkpoint(step)
 
