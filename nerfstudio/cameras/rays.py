@@ -47,7 +47,6 @@ class Frustums(TensorDataclass):
 
     def get_positions(self) -> TensorType[..., 3]:
         """Calculates "center" position of frustum. Not weighted by mass.
-
         Returns:
             xyz positions.
         """
@@ -58,7 +57,6 @@ class Frustums(TensorDataclass):
 
     def get_start_positions(self) -> TensorType[..., 3]:
         """Calculates "start" position of frustum.
-
         Returns:
             xyz positions.
         """
@@ -70,7 +68,6 @@ class Frustums(TensorDataclass):
 
     def get_gaussian_blob(self) -> Gaussians:
         """Calculates guassian approximation of conical frustum.
-
         Returns:
             Conical frustums approximated by gaussian distribution.
         """
@@ -89,7 +86,6 @@ class Frustums(TensorDataclass):
     @classmethod
     def get_mock_frustum(cls, device: Optional[TORCH_DEVICE] = "cpu") -> "Frustums":
         """Helper function to generate a placeholder frustum.
-
         Returns:
             A size 1 frustum with meaningless values.
         """
@@ -124,47 +120,27 @@ class RaySamples(TensorDataclass):
     times: Optional[TensorType[..., 1]] = None
     """Times at which rays are sampled"""
 
-    def get_weights(self, densities: TensorType[..., "num_samples", 1],
-                    gammas: Optional[TensorType[..., "num_samples", 1]] = None) -> TensorType[..., "num_samples", 1]:
+    def get_weights(self, densities: TensorType[..., "num_samples", 1]) -> TensorType[..., "num_samples", 1]:
         """Return weights based on predicted densities
-
         Args:
             densities: Predicted densities for samples along ray
-
         Returns:
             Weights for each sample
         """
 
         delta_density = self.deltas * densities
-        alphas = 1 - RaySamples.tr_func(delta_density, gammas)
+        alphas = 1 - torch.exp(-delta_density)
 
         transmittance = torch.cumsum(delta_density[..., :-1, :], dim=-2)
         transmittance = torch.cat(
             [torch.zeros((*transmittance.shape[:1], 1, 1), device=densities.device), transmittance], dim=-2
         )
-        transmittance = RaySamples.tr_func(transmittance, gammas)  # [..., "num_samples"]
+        transmittance = torch.exp(-transmittance)  # [..., "num_samples"]
 
         weights = alphas * transmittance  # [..., "num_samples"]
         weights = torch.nan_to_num(weights)
-        
-        return weights
-    
-    @staticmethod
-    def tr_func(delta_density, gamma = None):
-        """Switch between different transmittance functions"""
-        if gamma is None:
-            return torch.exp(-delta_density)
-        else:
-            return RaySamples.vicini_tr(delta_density, gamma).clamp(0, 1)
 
-    @staticmethod
-    def vicini_tr(delta_density, gamma):
-        """Non-exponential transmittance model from Delio Vicini, ACM ToG 2021
-           A non-exponential transmittance model for volumetric scene representations
-           
-           Args: gamma, the parameter controlling the transition between linear / exponential model
-        """
-        return gamma * torch.exp(-delta_density) + (1. - gamma) * torch.relu(1. - delta_density / 2.)
+        return weights
 
     @staticmethod
     def get_weights_and_transmittance_from_alphas(
@@ -214,7 +190,6 @@ class RayBundle(TensorDataclass):
 
     def set_camera_indices(self, camera_index: int) -> None:
         """Sets all the camera indices to a specific camera index.
-
         Args:
             camera_index: Camera index.
         """
@@ -226,10 +201,8 @@ class RayBundle(TensorDataclass):
 
     def sample(self, num_rays: int) -> "RayBundle":
         """Returns a RayBundle as a subset of rays.
-
         Args:
             num_rays: Number of rays in output RayBundle
-
         Returns:
             RayBundle with subset of rays.
         """
@@ -239,14 +212,11 @@ class RayBundle(TensorDataclass):
 
     def get_row_major_sliced_ray_bundle(self, start_idx: int, end_idx: int) -> "RayBundle":
         """Flattens RayBundle and extracts chunk given start and end indices.
-
         Args:
             start_idx: Start index of RayBundle chunk.
             end_idx: End index of RayBundle chunk.
-
         Returns:
             Flattened RayBundle with end_idx-start_idx rays.
-
         """
         return self.flatten()[start_idx:end_idx]
 
@@ -259,11 +229,9 @@ class RayBundle(TensorDataclass):
         spacing_to_euclidean_fn: Optional[Callable] = None,
     ) -> RaySamples:
         """Produces samples for each ray by projection points along the ray direction. Currently samples uniformly.
-
         Args:
             bin_starts: Distance from origin to start of bin.
             bin_ends: Distance from origin to end of bin.
-
         Returns:
             Samples projected along ray.
         """
