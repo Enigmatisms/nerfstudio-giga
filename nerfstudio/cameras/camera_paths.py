@@ -147,10 +147,14 @@ def get_path_from_json(camera_path: Dict[str, Any]) -> Cameras:
             fys.append(image_height)
         else:
             # field of view
-            fov = camera["fov"]
-            focal_length = three_js_perspective_camera_focal_length(fov, image_height)
-            fxs.append(focal_length)
-            fys.append(focal_length)
+            if camera_path.get('use_intrinsics', False):    # We want to use camera intrinsics to do the job
+                fxs.append(camera["fx"])
+                fys.append(camera["fy"])
+            else:       # original rendering method using FOV
+                fov = camera["fov"]
+                focal_length = three_js_perspective_camera_focal_length(fov, image_height)
+                fxs.append(focal_length)
+                fys.append(focal_length)
 
     # Iff ALL cameras in the path have a "time" value, construct Cameras with times
     if all("render_time" in camera for camera in camera_path["camera_path"]):
