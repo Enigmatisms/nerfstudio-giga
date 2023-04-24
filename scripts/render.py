@@ -303,7 +303,7 @@ class RenderTrajectory:
         elif self.traj == "filename":
             with open(self.camera_path_filename, "r", encoding="utf-8") as f:
                 camera_path = json.load(f)
-            seconds = camera_path["seconds"]
+            seconds = 1 if self.output_format == 'images' else camera_path["seconds"]
             if "camera_type" not in camera_path:
                 camera_type = CameraType.PERSPECTIVE
             elif camera_path["camera_type"] == "fisheye":
