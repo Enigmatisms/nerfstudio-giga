@@ -37,9 +37,9 @@ def load_from_single_file(path: str):
                 w2c = np.float32(result)
                 c2w = np.linalg.inv(w2c)
                 # Convert from COLMAP's camera coordinate system (OpenCV) to ours (OpenGL)
-                c2w[0:3, 1:3] *= -1
-                c2w = c2w[np.array([1, 0, 2, 3]), :]
-                c2w[2, :] *= -1
+                # c2w[0:3, 1:3] *= -1
+                # c2w = c2w[np.array([1, 0, 2, 3]), :]
+                # c2w[2, :] *= -1
                 extr = c2w
             elif line.startswith("intrinsic"):
                 result = []
@@ -79,6 +79,7 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
 
     check_set = set(int(name[:-4]) for name in all_imgs)
     H, W, _ = example_img.shape
+    scaled_h, scaled_w = H, W
     if scale < 9.9e-1:
         scaled_h, scaled_w = int(H * scale), int(W * scale)
         num_images = len(all_imgs)
@@ -108,15 +109,18 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
     test_file = deepcopy(train_file)
 
     image_pos = 'images' if scale > 9.9e-1 else 'image_scaled'
+    train_cnt = 0
     for name in names:
         index = int(name[:name.rfind("_")])
         transform = all_exts[index]
-        transform[:3, :] = Z_ROT @ transform[:3, :] 
+        # transform[:3, :] = Z_ROT @ transform[:3, :]
         if index not in check_set:
             frame = {"transform_matrix": transform.tolist()}
             test_file["frames"].append(frame)
         else:
-            frame = {"file_path": f"./{image_pos}/{index:08d}.jpg", "transform_matrix": transform.tolist()}
+            train_cnt += 1
+            print(f"Saving {name} to {train_cnt:05d}")
+            frame = {"file_path": f"{image_pos}/frame_{train_cnt:05d}.jpg", "transform_matrix": transform.tolist(), "original_name": name}
             train_file["frames"].append(frame)
             
     print(f"Training set: { len(train_file['frames']) } images. Test set: { len(test_file['frames']) } images.")
