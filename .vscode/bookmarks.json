@@ -159,6 +159,16 @@
 					"label": "get numpy images"
 				}
 			]
+		},
+		{
+			"path": "nerfstudio/data/dataparsers/base_dataparser.py",
+			"bookmarks": [
+				{
+					"line": 161,
+					"column": 25,
+					"label": "Transform back to original space"
+				}
+			]
 		}
 	]
 }

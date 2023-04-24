@@ -13,7 +13,7 @@ import mpl_toolkits.mplot3d as mp3
 import natsort
 import numpy as np
 import tqdm
-from cam_viz import Z_ROT, CameraPoseVisualizer
+from cam_viz import CameraPoseVisualizer
 
 
 def folder_path(path: str, comment: str = ""):
@@ -36,10 +36,6 @@ def load_from_single_file(path: str):
                     result.append([float(digit) for digit in digits])
                 w2c = np.float32(result)
                 c2w = np.linalg.inv(w2c)
-                # Convert from COLMAP's camera coordinate system (OpenCV) to ours (OpenGL)
-                # c2w[0:3, 1:3] *= -1
-                # c2w = c2w[np.array([1, 0, 2, 3]), :]
-                # c2w[2, :] *= -1
                 extr = c2w
             elif line.startswith("intrinsic"):
                 result = []

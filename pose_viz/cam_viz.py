@@ -2,9 +2,9 @@
     Modified from github: https://github.com/demul/extrinsic2pyramid/blob/main/util/camera_pose_visualizer.py
 """
 
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Patch
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
@@ -27,12 +27,6 @@ class CameraPoseVisualizer:
         self.ax.set_zlabel('z')
         self.colors = None
         print('initialize camera pose visualizer')
-
-    def matrix_nerf2ngp(matrix: np.ndarray) -> np.ndarray:
-        correct_pose = [-1., 1., -1,]
-        for i in range(3):
-            matrix[:3, i] *= correct_pose[i]
-        return matrix
 
     def extrinsic2pyramid(self, extrinsic, color='r', focal_len_scaled=5, aspect_ratio=0.3):
         vertex_std = np.array([[0, 0, 0, 1],
@@ -88,8 +82,7 @@ class CameraPoseVisualizer:
         self.generate_color_map(extrinsics.shape[0])
         for i, extrinsic in enumerate(extrinsics):
             # T = extrinsic
-            T = CameraPoseVisualizer.matrix_nerf2ngp(extrinsic)
-            T[:3, :] = Z_ROT @ T[:3, :]
+            T = extrinsic
             vertex_transformed = (vertex_std @ T.T)[..., :-1]
             meshes = [[vertex_transformed[0], vertex_transformed[1], vertex_transformed[2]],
                     [vertex_transformed[0], vertex_transformed[2], vertex_transformed[3]],
