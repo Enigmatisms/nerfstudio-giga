@@ -163,7 +163,7 @@ CUDA_VISIBLE_DEVICES=1 ns-train depth-nerfacto \
     --pipeline.model.max-occ-threshold 0.3 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
     --pipeline.model.max-occ-loss_mult 0.0005 \
-    --pipeline.model.occ-reg-iters 1000 \
+    --pipeline.model.occ-reg-iters 2000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
     --pipeline.model.min-depth-loss-mult 1e-3 \
