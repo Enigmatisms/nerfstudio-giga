@@ -54,6 +54,7 @@ def _render_trajectory_video(
     seconds: float = 5.0,
     output_format: Literal["images", "video"] = "video",
     camera_type: CameraType = CameraType.PERSPECTIVE,
+    extra_data: Dict = None
 ) -> None:
     """Helper function to create a video of the spiral trajectory.
 
@@ -92,7 +93,11 @@ def _render_trajectory_video(
         # but then we would have to move all of mdat to insert metadata atom
         # (unless we reserve enough space to overwrite with our uuid tag,
         # but we don't know how big the video file will be, so it's not certain!)
-
+    original_names = []
+    if extra_data is not None:
+        for camera in extra_data["camera_path"]:
+            name = camera["original_name"]
+            original_names.append(int(name[:name.find("_")]))
     with ExitStack() as stack:
         writer = None
 
@@ -129,7 +134,8 @@ def _render_trajectory_video(
                     render_image.append(output_image)
                 render_image = np.concatenate(render_image, axis=1)
                 if output_format == "images":
-                    media.write_image(output_image_dir / f"{camera_idx:05d}.jpg", render_image)
+                    output_idx = original_names[camera_idx] if original_names else camera_idx
+                    media.write_image(output_image_dir / f"{output_idx:05d}.jpg", render_image)
                 if output_format == "video":
                     if writer is None:
                         render_width = int(render_image.shape[1])
@@ -295,6 +301,7 @@ class RenderTrajectory:
         crop_data = None
 
         # TODO(ethan): use camera information from parsing args
+        camera_file = None
         if self.traj == "spiral":
             camera_start = pipeline.datamanager.eval_dataloader.get_camera(image_idx=0).flatten()
             # TODO(ethan): pass in the up direction of the camera
@@ -302,18 +309,18 @@ class RenderTrajectory:
             camera_path = get_spiral_path(camera_start, steps=30, radius=0.1)
         elif self.traj == "filename":
             with open(self.camera_path_filename, "r", encoding="utf-8") as f:
-                camera_path = json.load(f)
-            seconds = 1 if self.output_format == 'images' else camera_path["seconds"]
-            if "camera_type" not in camera_path:
+                camera_file = json.load(f)
+            seconds = 1 if self.output_format == 'images' else camera_file["seconds"]
+            if "camera_type" not in camera_file:
                 camera_type = CameraType.PERSPECTIVE
-            elif camera_path["camera_type"] == "fisheye":
+            elif camera_file["camera_type"] == "fisheye":
                 camera_type = CameraType.FISHEYE
-            elif camera_path["camera_type"] == "equirectangular":
+            elif camera_file["camera_type"] == "equirectangular":
                 camera_type = CameraType.EQUIRECTANGULAR
             else:
                 camera_type = CameraType.PERSPECTIVE
-            crop_data = get_crop_from_json(camera_path)
-            camera_path = get_path_from_json(camera_path)
+            crop_data = get_crop_from_json(camera_file)
+            camera_path = get_path_from_json(camera_file)
         elif self.traj == "interpolate":
             camera_type = CameraType.PERSPECTIVE
             camera_path = get_interpolated_camera_path(
@@ -332,6 +339,7 @@ class RenderTrajectory:
             seconds=seconds,
             output_format=self.output_format,
             camera_type=camera_type,
+            extra_data=camera_file
         )
 
 

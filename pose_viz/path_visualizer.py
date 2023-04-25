@@ -61,7 +61,7 @@ def get_arrow(origin, end, length, scale=1, color = [1, 0, 0]):
     return (mesh)
 
 def visualize_paths(opts):
-    render_path   = os.path.join(opts.input_path, opts.scene_name, opts.output_name)
+    render_path   = os.path.join(opts.input_path, opts.scene_name, opts.input_name)
     studio_path   = os.path.join(opts.input_path, opts.scene_name, "path.json")
     tr_path       = os.path.join(opts.input_path, opts.scene_name, "dataparser_transforms.json")
 
@@ -76,17 +76,17 @@ def visualize_paths(opts):
     render_pos = []
     studio_pos = []
 
-    vec_s1 = []
-    vec_s2 = []
+    frame_s1 = []
+    frame_s2 = []
 
     colors1 = []
     colors2 = []
     for frame1 in render_data['camera_path']:
-        input_t = np.float32(frame1['camera_to_world']).reshape(4, 4)
+        tr_matrix = np.float32(frame1['camera_to_world']).reshape(4, 4)
         # This applied tf is not read but I knew it beforehand
         applied_tf = np.float32([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-        tr_matrix = transform_poses(scale, T, input_t, applied_tf)
-        vec_s1.append([
+        # tr_matrix = transform_poses(scale, T, input_t, applied_tf)
+        frame_s1.append([
             tr_matrix[0:3, 0:3] @ np.float32([0, 0, 1]),
             tr_matrix[0:3, 0:3] @ np.float32([0, 1, 0]),
             tr_matrix[0:3, 0:3] @ np.float32([1, 0, 0])
@@ -98,7 +98,7 @@ def visualize_paths(opts):
     # the output should be transformed by transform_pose, then the result can be used
     for frame1 in studio_data['camera_path']:
         tr_matrix = np.float32(frame1['camera_to_world']).reshape(4, 4)
-        vec_s2.append([
+        frame_s2.append([
             tr_matrix[0:3, 0:3] @ np.float32([0, 0, 1]),
             tr_matrix[0:3, 0:3] @ np.float32([0, 1, 0]),
             tr_matrix[0:3, 0:3] @ np.float32([1, 0, 0])
@@ -116,9 +116,11 @@ def visualize_paths(opts):
 
     app = gui.Application.instance
     app.initialize()
-    vis = o3d.visualization.O3DVisualizer("Open3D - 3D Text", 1024, 768)
+    vis = o3d.visualization.O3DVisualizer("Open3D - Rendering path visualization", 1024, 768)
+    vis.set_background((0.3, 0.3, 0.3, 1), None)
     vis.show_settings = True
     vis.show_skybox(False)
+    vis.show_axes = True
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(render_pos)
@@ -133,14 +135,14 @@ def visualize_paths(opts):
     studio_len = studio_pos.shape[0]
     for i in range(0, render_len, 1):
         start_p = render_pos[i]
-        arrows = vec_s1[i]
+        arrows = frame_s1[i]
         for j in range(3):
             end_p = start_p + arrows[j]
             arrow = get_arrow(start_p, end_p, length = 0.03, scale=0.5, color = colors[j])
             vis.add_geometry(f"render_arrow{3 * i + j}", arrow)
     for i in range(0, studio_len, 1):
         start_p = studio_pos[i]
-        arrows = vec_s2[i]
+        arrows = frame_s2[i]
         for j in range(3):
             end_p = start_p + arrows[j]
             arrow = get_arrow(start_p, end_p, length = 0.03, scale=0.5, color = colors[j])
@@ -156,14 +158,14 @@ def visualize_paths(opts):
     
 
 def parser_opts():
-    # IO parameters
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, help='Config file path')
-    parser.add_argument("--input_path",      required = True, help = "Input scene file folder", type = str)
-    parser.add_argument("--scene_name",      required = True, help = "Input scene name", type = str)
-    parser.add_argument("--output_name",     default = "output.json", help = "Output pose json file name", type = str)
+    parser.add_argument("--input_path", required = True, help = "Input scene file folder", type = str)
+    parser.add_argument("--scene_name", required = True, help = "Input scene name", type = str)
+    parser.add_argument("--input_name", default = "output.json", help = "Output pose json file name", type = str)
     return parser.parse_args()
 
 if __name__ == "__main__":
     opts = parser_opts()
     visualize_paths(opts)
+    

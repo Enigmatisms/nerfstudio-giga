@@ -138,6 +138,7 @@ def get_path_from_json(camera_path: Dict[str, Any]) -> Cameras:
     c2ws = []
     fxs = []
     fys = []
+    distortion = camera_utils.get_distortion_params()
     for camera in camera_path["camera_path"]:
         # pose
         c2w = torch.tensor(camera["camera_to_world"]).view(4, 4)[:3]
@@ -150,6 +151,14 @@ def get_path_from_json(camera_path: Dict[str, Any]) -> Cameras:
             if camera_path.get('use_intrinsics', False):    # We want to use camera intrinsics to do the job
                 fxs.append(camera["fx"])
                 fys.append(camera["fy"])
+                distortion = camera_utils.get_distortion_params(
+                    k1=float(camera.get("k1", 0.0)),
+                    k2=float(camera.get("k2", 0.0)),
+                    k3=float(camera.get("k3", 0.0)),
+                    k4=float(camera.get("k4", 0.0)),
+                    p1=float(camera.get("p1", 0.0)),
+                    p2=float(camera.get("p2", 0.0))
+                )
             else:       # original rendering method using FOV
                 fov = camera["fov"]
                 focal_length = three_js_perspective_camera_focal_length(fov, image_height)
@@ -168,6 +177,7 @@ def get_path_from_json(camera_path: Dict[str, Any]) -> Cameras:
     return Cameras(
         fx=fx,
         fy=fy,
+        distortion_params=distortion,
         cx=image_width / 2,
         cy=image_height / 2,
         camera_to_worlds=camera_to_worlds,

@@ -9,20 +9,20 @@ from copy import deepcopy
 
 import cv2 as cv
 import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d as mp3
 import natsort
 import numpy as np
 import tqdm
-from cam_viz import CameraPoseVisualizer
 
 
 def folder_path(path: str, comment: str = ""):
+    """Make valid folder"""
     if not os.path.exists(path):
         if comment: print(comment)
         os.makedirs(path)
     return path
 
 def load_from_single_file(path: str):
+    """Load GIGAMVS camera param"""
     with open(path, 'r') as f:
         line = f.readline()
         extr = None
@@ -36,6 +36,10 @@ def load_from_single_file(path: str):
                     result.append([float(digit) for digit in digits])
                 w2c = np.float32(result)
                 c2w = np.linalg.inv(w2c)
+                # Convert from COLMAP's camera coordinate system (OpenCV) to ours (OpenGL)
+                c2w[0:3, 1:3] *= -1
+                c2w = c2w[np.array([1, 0, 2, 3]), :]
+                c2w[2, :] *= -1
                 extr = c2w
             elif line.startswith("intrinsic"):
                 result = []
@@ -48,6 +52,7 @@ def load_from_single_file(path: str):
         return extr, intr
 
 def input_extrinsics(input_path: str):
+    """Load GIGAMVS camera intrinsics"""
     img_names = filter(lambda x: x.endswith("txt"), os.listdir(input_path))
     all_cams = [name for name in img_names]
     total_imgs = natsort.natsorted(all_cams)
@@ -61,11 +66,13 @@ def input_extrinsics(input_path: str):
     return np.float32(all_exts), np.float32(all_ints), total_imgs
 
 def extract_focal(shape: tuple, K: np.ndarray):
+    """Extract focal from camera intrinsics"""
     H, W = shape
     fx, fy = K[0, 0], K[1, 1]
     return 2. * np.arctan2(W, 2. * fx), 2. * np.arctan2(H, 2. * fy)
 
 def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
+    """Output NeRF json scene file"""
     image_folder = os.path.join(input_scene, "images")
     img_names = filter(lambda x: x.endswith(img_ext), os.listdir(image_folder))
     all_imgs = [name for name in img_names]
@@ -75,6 +82,7 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
 
     check_set = set(int(name[:-4]) for name in all_imgs)
     H, W, _ = example_img.shape
+    print(H, W)
     scaled_h, scaled_w = H, W
     if scale < 9.9e-1:
         scaled_h, scaled_w = int(H * scale), int(W * scale)
@@ -111,7 +119,7 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
         transform = all_exts[index]
         # transform[:3, :] = Z_ROT @ transform[:3, :]
         if index not in check_set:
-            frame = {"transform_matrix": transform.tolist()}
+            frame = {"transform_matrix": transform.tolist(), "original_name": name}
             test_file["frames"].append(frame)
         else:
             train_cnt += 1
@@ -120,9 +128,9 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
             train_file["frames"].append(frame)
             
     print(f"Training set: { len(train_file['frames']) } images. Test set: { len(test_file['frames']) } images.")
-    with open(os.path.join(input_scene, "train.json"), "w") as output:
+    with open(os.path.join(input_scene, "train.json"), "w", encoding = 'utf-8') as output:
         json.dump(train_file, output, indent=4)
-    with open(os.path.join(input_scene, "test.json"), "w") as output:
+    with open(os.path.join(input_scene, "test.json"), "w", encoding = 'utf-8') as output:
         json.dump(test_file, output, indent=4)
     
 
@@ -133,12 +141,3 @@ if __name__ == '__main__':
         scale = float(sys.argv[2])
     all_exts, all_ints, names = input_extrinsics(os.path.join(input_scene, "cams"))
     export_json(all_exts, all_ints, names, input_scene, scale)
-    mins = all_exts[:, :-1, -1].min(axis = 0) - 0.5
-    maxs = all_exts[:, :-1, -1].max(axis = 0) + 0.5
-
-    # argument : the minimum/maximum value of x, y, z
-    visualizer = CameraPoseVisualizer([mins[0], maxs[0]], [mins[1], maxs[1]], [mins[2], maxs[2]])
-    # argument : extrinsic matrix, color, scaled focal length(z-axis length of frame body of camera
-    visualizer.patch_transform(all_exts, 0.6, 0.3)
-    visualizer.customize_legend([f'pose {i}' for i in range(all_exts.shape[0])])
-    visualizer.show()
