@@ -161,7 +161,7 @@ class Model(nn.Module):
         """
 
     @torch.no_grad()
-    def get_outputs_for_camera_ray_bundle(self, camera_ray_bundle: RayBundle) -> Dict[str, torch.Tensor]:
+    def get_outputs_for_camera_ray_bundle(self, camera_ray_bundle: RayBundle, selection: Set[str] = None) -> Dict[str, torch.Tensor]:
         """Takes in camera parameters and computes the output of the model.
 
         Args:
@@ -171,12 +171,14 @@ class Model(nn.Module):
         image_height, image_width = camera_ray_bundle.origins.shape[:2]
         num_rays = len(camera_ray_bundle)
         outputs_lists = defaultdict(list)
+        print(f"Ray num: {num_rays}, {num_rays_per_chunk}")
         for i in range(0, num_rays, num_rays_per_chunk):
             start_idx = i
             end_idx = i + num_rays_per_chunk
             ray_bundle = camera_ray_bundle.get_row_major_sliced_ray_bundle(start_idx, end_idx)
             outputs = self.forward(ray_bundle=ray_bundle)
             for output_name, output in outputs.items():  # type: ignore
+                if selection and output_name not in selection: continue
                 outputs_lists[output_name].append(output)
         outputs = {}
         for output_name, outputs_list in outputs_lists.items():

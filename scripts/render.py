@@ -93,11 +93,14 @@ def _render_trajectory_video(
         # but then we would have to move all of mdat to insert metadata atom
         # (unless we reserve enough space to overwrite with our uuid tag,
         # but we don't know how big the video file will be, so it's not certain!)
+
+    # substitute the output name by previouly saved names
     original_names = []
     if extra_data is not None:
         for camera in extra_data["camera_path"]:
             name = camera["original_name"]
             original_names.append(int(name[:name.find("_")]))
+    selection_set = set(rendered_output_names)
     with ExitStack() as stack:
         writer = None
 
@@ -114,11 +117,11 @@ def _render_trajectory_video(
                     with renderers.background_color_override_context(
                         crop_data.background_color.to(pipeline.device)
                     ), torch.no_grad():
-                        outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+                        outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, selection_set)
                 else:
                     with torch.no_grad():
-                        outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
-
+                        outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, selection_set)
+                print(outputs)
                 render_image = []
                 for rendered_output_name in rendered_output_names:
                     if rendered_output_name not in outputs:
@@ -132,6 +135,7 @@ def _render_trajectory_video(
                     if output_image.shape[-1] == 1:
                         output_image = np.concatenate((output_image,) * 3, axis=-1)
                     render_image.append(output_image)
+                del outputs             # recycle usable GPU memory
                 render_image = np.concatenate(render_image, axis=1)
                 if output_format == "images":
                     output_idx = original_names[camera_idx] if original_names else camera_idx
