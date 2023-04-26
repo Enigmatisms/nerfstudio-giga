@@ -121,7 +121,9 @@ def _render_trajectory_video(
                 else:
                     with torch.no_grad():
                         outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle, selection_set)
-                print(outputs)
+                # print(outputs)
+                del camera_ray_bundle
+                torch.cuda.empty_cache()
                 render_image = []
                 for rendered_output_name in rendered_output_names:
                     if rendered_output_name not in outputs:
@@ -136,6 +138,7 @@ def _render_trajectory_video(
                         output_image = np.concatenate((output_image,) * 3, axis=-1)
                     render_image.append(output_image)
                 del outputs             # recycle usable GPU memory
+                torch.cuda.empty_cache()
                 render_image = np.concatenate(render_image, axis=1)
                 if output_format == "images":
                     output_idx = original_names[camera_idx] if original_names else camera_idx
