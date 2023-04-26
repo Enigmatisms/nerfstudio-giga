@@ -171,7 +171,6 @@ class Model(nn.Module):
         image_height, image_width = camera_ray_bundle.origins.shape[:2]
         num_rays = len(camera_ray_bundle)
         outputs_lists = defaultdict(list)
-        print(f"Ray num: {num_rays}, {num_rays_per_chunk}")
         for i in range(0, num_rays, num_rays_per_chunk):
             start_idx = i
             end_idx = i + num_rays_per_chunk
