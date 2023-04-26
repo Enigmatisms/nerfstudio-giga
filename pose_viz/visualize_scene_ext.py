@@ -13,6 +13,8 @@ import natsort
 import numpy as np
 import tqdm
 
+secondary_outpath = "../../dataset/images_and_cams/full/pose_align/"
+
 
 def folder_path(path: str, comment: str = ""):
     """Make valid folder"""
@@ -132,7 +134,12 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
         json.dump(train_file, output, indent=4)
     with open(os.path.join(input_scene, "test.json"), "w", encoding = 'utf-8') as output:
         json.dump(test_file, output, indent=4)
-    
+    all_parts = input_scene.split("/")
+    scene_name = all_parts[-1] if all_parts[-1] else all_parts[-2] 
+    with open(os.path.join(secondary_outpath, scene_name, "train.json"), "w", encoding = 'utf-8') as output:
+        json.dump(train_file, output, indent=4)
+    with open(os.path.join(secondary_outpath, scene_name, "test.json"), "w", encoding = 'utf-8') as output:
+        json.dump(test_file, output, indent=4)
 
 if __name__ == '__main__':
     input_scene = sys.argv[1]

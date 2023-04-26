@@ -131,12 +131,14 @@ def parser_opts():
     parser.add_argument("--scene_name",      required = True, help = "Input scene name", type = str)
     parser.add_argument("--origin_name",     default = "train.json", help = "Input original pose json file name", type = str)
     parser.add_argument("--parser_name",     default = "dataparser_transforms.json", help = "Scale and transform filename", type = str)
-    parser.add_argument("--colmap_name",     default = "transforms.json", help = "Input colmap pose json file name", type = str)
+    parser.add_argument("--colmap_name",     default = "transforms_new.json", help = "Input colmap pose json file name", type = str)
     parser.add_argument("--eval_name",       default = "test.json", help = "Eval pose json file name", type = str)
     parser.add_argument("--output_name",     default = "output.json", help = "Output pose json file name", type = str)
     parser.add_argument("--scale",           default = 1, help = "Scale camera intrinsics", type = float)
-    parser.add_argument("-v", "--visualize", default = False, action = "store_true", help = "Whether to visualize result")
     parser.add_argument("--train",      default = False, action = "store_true", help = "Whether to generate transformed train views.")
+    parser.add_argument("-v", "--visualize", default = False, action = "store_true", help = "Whether to visualize result")
+    parser.add_argument("-o", "--origin_pose", default = False, action = "store_true", help = "Whether to use original poses")
+    parser.add_argument("-t", "--transform", default = False, action = "store_true", help = "Whether to transform coordinate frames")
 
     # For pose registration
     parser.add_argument("--invalid_th", default = 0.2, help = "Threshold for invalid pose alignment: bigger - fewer modifications to COLMAP pose", type = float)
@@ -167,7 +169,8 @@ def main_output(opts):
         frame2_map[frame2['file_path']] = matrix2
     for frame1 in origin_data['frames']:
         matrix1: np.ndarray = np.float32(frame1['transform_matrix'])
-        matrix1[:3, :3] = matrix1[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+        if opts.transform:
+            matrix1[:3, :3] = matrix1[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
         if frame1['file_path'] in frame2_map:
             matrix2 = frame2_map[frame1['file_path']]
             data.append(matrix1[0:3, 3:4])
@@ -184,7 +187,8 @@ def main_output(opts):
     data_trans = []
     for frame1 in origin_data['frames']:
         tr_matrix = np.float32(frame1['transform_matrix'])
-        tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+        if opts.transform:
+            tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
         if opts.scene_name == 'Library' and ('49' in frame1['file_path']):
             continue
         matrix1 = transform_scale(scale, avg_trans, tr_matrix)
@@ -202,7 +206,8 @@ def main_output(opts):
     color_test_fix  = []
     for frame1 in test_data['frames']:
         tr_matrix = np.float32(frame1['transform_matrix'])
-        tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+        if opts.transform:
+            tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
         matrix1 = transform_scale(scale, avg_trans, tr_matrix)[0:3, 3:4]
         data_test.append(matrix1)
         color_test.append([1., 1., 0.])
@@ -218,8 +223,8 @@ def main_output(opts):
             elif d < min_dist2:
                 min_dist2 = d
                 delta2_t = g - dt
-        matrix1_fix = matrix1 + (delta_t + delta2_t) / 2
-        data_test_fix.append(matrix1_fix)
+        matrix1 = matrix1 + (delta_t + delta2_t) / 2
+        data_test_fix.append(matrix1)
 
     if opts.visualize:
         data_trans = np.asarray(data_trans).squeeze()
@@ -286,13 +291,17 @@ def main_output(opts):
                 "applied_transform": colmap_data.get("applied_transform", np.eye(4, dtype = np.float32).tolist())
             })
         t_mat, scene_scale = np.float32(parser_data["transform"]), parser_data["scale"]
-        if opts.train:
+        if opts.train or opts.origin_pose:
             for frame in data_val['frames']:
-                frame['transform_matrix'] = np.float32(frame['transform_matrix'])
+                matrix = np.float32(frame['transform_matrix'])
+                if opts.transform:
+                    matrix[:3, :3] = matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+                frame['transform_matrix'] = matrix
         else:
             for frame in data_val['frames']:
                 tr_matrix = np.float32(frame['transform_matrix'])
-                tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+                if opts.transform:
+                    tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
                 matrix = transform_scale(scale, avg_trans, tr_matrix)
                 # m_trans = matrix[0:3, 3:4]
 
