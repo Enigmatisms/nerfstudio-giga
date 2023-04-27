@@ -1,6 +1,6 @@
 # Training procedures, for specific scene please go to the ./configs/
-files=("haiyan_hall" "library" "memorial_hall")
+files=("musesum" "peony_garden" "science_square")
 for file in ${files[@]}; do
     echo "Processing $file.sh"
-    CUDA_VISIBLE_DEVICES=0 ./configs/$file.sh ../dataset/
+    CUDA_VISIBLE_DEVICES=1 ./configs/$file.sh ../dataset/
 done

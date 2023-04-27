@@ -1,5 +1,5 @@
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
+    --data ${1}/Library_IGEV/transforms_new.json \
     --timestamp library_new \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
@@ -35,8 +35,8 @@ ns-train depth-nerfacto \
     --max-num-iterations 40000
 
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
-    --load-dir ./outputs/MemorialHall_IGEV/depth-nerfacto/library_new/nerfstudio_models/ \
+    --data ${1}/Library_IGEV/transforms_new.json \
+    --load-dir ./outputs/Library_IGEV/depth-nerfacto/library_new/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \

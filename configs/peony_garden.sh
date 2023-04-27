@@ -1,5 +1,5 @@
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
+    --data ${1}/Peony_IGEV/transforms_new.json \
     --timestamp peony_new \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
@@ -35,7 +35,7 @@ ns-train depth-nerfacto \
     --max-num-iterations 40000
 
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
+    --data ${1}/Peony_IGEV/transforms_new.json \
     --load-dir ./outputs/Peony_IGEV/depth-nerfacto/peony_new/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \

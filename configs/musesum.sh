@@ -1,5 +1,5 @@
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
+    --data ${1}/Museum_IGEV/transforms_new.json \
     --timestamp mesuem_new \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
@@ -35,7 +35,7 @@ ns-train depth-nerfacto \
     --max-num-iterations 40000
 
 ns-train depth-nerfacto \
-    --data ${1}/transforms_new.json \
+    --data ${1}/Museum_IGEV/transforms_new.json \
     --load-dir ./outputs/Museum_IGEV/depth-nerfacto/mesuem_new/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
