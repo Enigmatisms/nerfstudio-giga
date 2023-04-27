@@ -1,2 +1,2 @@
 python ./path_visualizer.py --input_path ../../dataset/images_and_cams/full/pose_align/ \
-    --scene_name theOldGate
+    --scene_name MemorialHall

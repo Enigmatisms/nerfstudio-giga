@@ -134,7 +134,7 @@
 			"path": "nerfstudio/configs/method_configs.py",
 			"bookmarks": [
 				{
-					"line": 146,
+					"line": 152,
 					"column": 45,
 					"label": "what is RAdam"
 				}
