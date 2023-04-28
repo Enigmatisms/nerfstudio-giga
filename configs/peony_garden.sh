@@ -5,7 +5,8 @@ ns-train depth-nerfacto \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -32,7 +33,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 40000
+    --max-num-iterations 45000
 
 ns-train depth-nerfacto \
     --data ${1}/Peony_IGEV/transforms_new.json \
@@ -41,7 +42,8 @@ ns-train depth-nerfacto \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-4 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -71,4 +73,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 50000
+    --max-num-iterations 64000

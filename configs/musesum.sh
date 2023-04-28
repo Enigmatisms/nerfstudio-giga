@@ -5,7 +5,8 @@ ns-train depth-nerfacto \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -15,18 +16,21 @@ ns-train depth-nerfacto \
     --pipeline.model.entropy-loss-mult 0.001 \
     --pipeline.model.use-occ-regularization True \
     --pipeline.model.min-occ-threshold 0.1 \
-    --pipeline.model.max-occ-threshold 0.3 \
-    --pipeline.model.min-occ-loss_mult 0.0001 \
-    --pipeline.model.max-occ-loss_mult 0.0005 \
-    --pipeline.model.occ-reg-iters 2000 \
-    --pipeline.model.sigma-perturb-std 0.0 \
-    --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 1e-3 \
-    --pipeline.model.max-depth-loss-mult 1e-3 \
+    --pipeline.model.max-occ-threshold 0.5 \
+    --pipeline.model.min-occ-loss_mult 0.0002 \
+    --pipeline.model.max-occ-loss_mult 0.002 \
+    --pipeline.model.occ-reg-iters 3000 \
+    --pipeline.model.sigma-perturb-std 0.1 \
+    --pipeline.model.sigma-perturb-iter 2000 \
+    --pipeline.model.min-depth-loss-mult 3e-3 \
+    --pipeline.model.max-depth-loss-mult 3e-3 \
     --pipeline.model.depth-loss-iter 100000 \
     --pipeline.model.depth-sigma 0.01 \
     --pipeline.model.depth-loss-type DS_NERF \
-    --pipeline.model.sample-unseen-views False \
+    --pipeline.model.sample-unseen-views True \
+    --pipeline.datamanager.unseen-sample-iter 1500 \
+    --pipeline.datamanager.perturb-rot-sigma 5.0 \
+    --pipeline.datamanager.unseen-ratio 1.0 \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
@@ -41,7 +45,8 @@ ns-train depth-nerfacto \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -57,8 +62,8 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 2e-3 \
-    --pipeline.model.max-depth-loss-mult 2e-3 \
+    --pipeline.model.min-depth-loss-mult 3e-3 \
+    --pipeline.model.max-depth-loss-mult 3e-3 \
     --pipeline.model.depth-loss-iter 100000 \
     --pipeline.model.depth-sigma 0.01 \
     --pipeline.model.depth-loss-type DS_NERF \
@@ -71,4 +76,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 50000
+    --max-num-iterations 64000

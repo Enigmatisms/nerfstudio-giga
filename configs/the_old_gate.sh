@@ -1,11 +1,12 @@
 ns-train depth-nerfacto \
-    --data ${1}/transforms.json \
-    --timestamp old_gate \
+    --data ${1}/theOldGate_IGEV/transforms_new.json \
+    --timestamp old_gate_new \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -16,8 +17,8 @@ ns-train depth-nerfacto \
     --pipeline.model.use-occ-regularization True \
     --pipeline.model.min-occ-threshold 0.1 \
     --pipeline.model.max-occ-threshold 0.4 \
-    --pipeline.model.min-occ-loss_mult 0.0001 \
-    --pipeline.model.max-occ-loss_mult 0.0005 \
+    --pipeline.model.min-occ-loss_mult 0.0002 \
+    --pipeline.model.max-occ-loss_mult 0.001 \
     --pipeline.model.occ-reg-iters 2000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
@@ -36,16 +37,17 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.unseen-ratio 1.0 \
     --pipeline.datamanager.sample_unseen_view True \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 40000
+    --max-num-iterations 45000
 
 ns-train depth-nerfacto \
-    --data ${1}/transforms.json \
-    --load-dir ./outputs/theOldGate_IGEV/depth-nerfacto/old_gate/nerfstudio_models/ \
+    --data ${1}/theOldGate_IGEV/transforms_new.json \
+    --load-dir ./outputs/theOldGate_IGEV/depth-nerfacto/old_gate_new/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-4 \
-    --pipeline.model.num-nerf-samples-per-ray 48 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -75,4 +77,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 40000
+    --max-num-iterations 64000

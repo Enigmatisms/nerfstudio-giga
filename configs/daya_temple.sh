@@ -1,5 +1,5 @@
 ns-train depth-nerfacto \
-    --data ${1}/DayaTemple_IGEV/transforms.json \
+    --data ${1}/DayaTemple_IGEV/transforms_new.json \
     --timestamp daya_new \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
@@ -15,7 +15,7 @@ ns-train depth-nerfacto \
     --pipeline.model.entropy-loss-mult 0.001 \
     --pipeline.model.use-occ-regularization False \
     --pipeline.model.min-occ-threshold 0.1 \
-    --pipeline.model.max-occ-threshold 0.2 \
+    --pipeline.model.max-occ-threshold 0.25 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
     --pipeline.model.max-occ-loss_mult 0.0005 \
     --pipeline.model.occ-reg-iters 1000 \
@@ -35,12 +35,12 @@ ns-train depth-nerfacto \
     --max-num-iterations 40000
 
 ns-train depth-nerfacto \
-    --data ${1}/DayaTemple_IGEV/transforms.json \
+    --data ${1}/DayaTemple_IGEV/transforms_new.json \
     --load-dir ./outputs/daya_igev/depth-nerfacto/daya_new/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
-    --pipeline.model.distortion-loss-mult 1e-4 \
+    --pipeline.model.distortion-loss-mult 1e-5 \
     --pipeline.model.num-nerf-samples-per-ray 48 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
@@ -66,9 +66,8 @@ ns-train depth-nerfacto \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
-    --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 50000
+    --max-num-iterations 64000
