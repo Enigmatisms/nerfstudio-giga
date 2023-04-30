@@ -7,6 +7,7 @@ import os
 import sys
 from copy import deepcopy
 
+import configargparse
 import cv2 as cv
 import matplotlib.pyplot as plt
 import natsort
@@ -73,8 +74,10 @@ def extract_focal(shape: tuple, K: np.ndarray):
     fx, fy = K[0, 0], K[1, 1]
     return 2. * np.arctan2(W, 2. * fx), 2. * np.arctan2(H, 2. * fy)
 
-def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
-    """Output NeRF json scene file"""
+def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', merge_train_test = False):
+    """Output NeRF json scene file
+        - merge_train_test: if True, train.json will have test poses (with file_path = test_view)
+    """
     image_folder = os.path.join(input_scene, "images")
     img_names = filter(lambda x: x.endswith(img_ext), os.listdir(image_folder))
     all_imgs = [name for name in img_names]
@@ -84,7 +87,6 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
 
     check_set = set(int(name[:-4]) for name in all_imgs)
     H, W, _ = example_img.shape
-    print(H, W)
     scaled_h, scaled_w = H, W
     if scale < 9.9e-1:
         scaled_h, scaled_w = int(H * scale), int(W * scale)
@@ -116,6 +118,7 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
 
     image_pos = 'images' if scale > 9.9e-1 else 'image_scaled'
     train_cnt = 0
+    merged_test_view = 0
     for name in names:
         index = int(name[:name.rfind("_")])
         transform = all_exts[index]
@@ -123,28 +126,37 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg'):
         if index not in check_set:
             frame = {"transform_matrix": transform.tolist(), "original_name": name}
             test_file["frames"].append(frame)
+            if merge_train_test:        # for test view occlusion loss
+                frame = {"file_path": "test_view", "transform_matrix": transform.tolist()}
+                train_file["frames"].append(frame)
+                merged_test_view += 1
         else:
             train_cnt += 1
-            print(f"Saving {name} to {train_cnt:05d}")
             frame = {"file_path": f"{image_pos}/frame_{train_cnt:05d}.jpg", "transform_matrix": transform.tolist(), "original_name": name}
             train_file["frames"].append(frame)
             
-    print(f"Training set: { len(train_file['frames']) } images. Test set: { len(test_file['frames']) } images.")
-    with open(os.path.join(input_scene, "train.json"), "w", encoding = 'utf-8') as output:
+    print(f"Training set: { train_cnt } images. Merged test view: {merged_test_view}. Test set: { len(test_file['frames']) } images.")
+    output_train_file = "train_merged.json" if merge_train_test else "train.json"
+    with open(os.path.join(input_scene, output_train_file), "w", encoding = 'utf-8') as output:
         json.dump(train_file, output, indent=4)
     with open(os.path.join(input_scene, "test.json"), "w", encoding = 'utf-8') as output:
         json.dump(test_file, output, indent=4)
     all_parts = input_scene.split("/")
     scene_name = all_parts[-1] if all_parts[-1] else all_parts[-2] 
-    with open(os.path.join(secondary_outpath, scene_name, "train.json"), "w", encoding = 'utf-8') as output:
+    with open(os.path.join(secondary_outpath, scene_name, output_train_file), "w", encoding = 'utf-8') as output:
         json.dump(train_file, output, indent=4)
     with open(os.path.join(secondary_outpath, scene_name, "test.json"), "w", encoding = 'utf-8') as output:
         json.dump(test_file, output, indent=4)
 
+def parser_opts():
+    parser = configargparse.ArgumentParser()
+    parser.add_argument('--config', is_config_file=True, help='Config file path')
+    parser.add_argument("-i", "--input_scene",  required = True, help = "Input scene file", type = str)
+    parser.add_argument("-s", "--scale",        default = 1.0, help = "Scaling of the scene", type = float)
+    parser.add_argument("-m", "--merge",        default = False, action = "store_true", help = "whether to merge train / test dataset")
+    return parser.parse_args()
+
 if __name__ == '__main__':
-    input_scene = sys.argv[1]
-    scale = 1.0
-    if len(sys.argv) > 2:
-        scale = float(sys.argv[2])
-    all_exts, all_ints, names = input_extrinsics(os.path.join(input_scene, "cams"))
-    export_json(all_exts, all_ints, names, input_scene, scale)
+    opts = parser_opts()
+    all_exts, all_ints, names = input_extrinsics(os.path.join(opts.input_scene, "cams"))
+    export_json(all_exts, all_ints, names, opts.input_scene, opts.scale, merge_train_test = opts.merge)

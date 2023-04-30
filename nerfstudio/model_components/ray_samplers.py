@@ -597,6 +597,7 @@ class ProposalNetworkSampler(Sampler):
             self._steps_since_update = 0
 
         assert ray_samples is not None
+        ray_samples.has_test_view = ray_bundle.has_test_view
         return ray_samples, weights_list, ray_samples_list
 
 

@@ -186,3 +186,27 @@ class NearFarCollider(SceneCollider):
         ray_bundle.nears = ones * near_plane
         ray_bundle.fars = ones * self.far_plane
         return ray_bundle
+
+class NearFarWithTestViewCollider(NearFarCollider):
+    """ This scene collider enables us to sample short light paths
+        in order to calculate occlusion loss under test views
+    """
+    def __init__(self, test_near: float, test_far: float, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.test_near = test_near
+        self.test_far = test_far
+
+    def set_nears_and_fars(self, ray_bundle: RayBundle) -> RayBundle:
+        ones = torch.ones_like(ray_bundle.origins[..., 0:1])
+        near_plane = self.near_plane if self.training else 0
+        if ray_bundle.has_test_view: 
+            test_base = ray_bundle.origins.shape[0] // 4 * 3
+            ray_bundle.nears = ones * near_plane
+            ray_bundle.fars  = ones * self.far_plane
+            ray_bundle.nears[test_base:, ...] = self.test_near
+            ray_bundle.fars[test_base:, ...] = self.test_far
+        else:
+            ray_bundle.nears = ones * near_plane
+            ray_bundle.fars = ones * self.far_plane
+        return ray_bundle
+    

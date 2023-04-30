@@ -32,23 +32,19 @@ from nerfstudio.cameras.rays import RaySamples
 from nerfstudio.data.scene_box import SceneBox
 from nerfstudio.field_components.activations import trunc_exp
 from nerfstudio.field_components.embedding import Embedding
-from nerfstudio.field_components.encodings import Encoding, HashEncoding, SHEncoding
-from nerfstudio.field_components.field_heads import (
-    DensityFieldHead,
-    FieldHead,
-    FieldHeadNames,
-    PredNormalsFieldHead,
-    RGBFieldHead,
-    SemanticFieldHead,
-    TransientDensityFieldHead,
-    TransientRGBFieldHead,
-    UncertaintyFieldHead,
-)
+from nerfstudio.field_components.encodings import (Encoding, HashEncoding,
+                                                   SHEncoding)
+from nerfstudio.field_components.field_heads import (DensityFieldHead,
+                                                     FieldHead, FieldHeadNames,
+                                                     PredNormalsFieldHead,
+                                                     RGBFieldHead,
+                                                     SemanticFieldHead,
+                                                     TransientDensityFieldHead,
+                                                     TransientRGBFieldHead,
+                                                     UncertaintyFieldHead)
 from nerfstudio.field_components.mlp import MLP
-from nerfstudio.field_components.spatial_distortions import (
-    SceneContraction,
-    SpatialDistortion,
-)
+from nerfstudio.field_components.spatial_distortions import (SceneContraction,
+                                                             SpatialDistortion)
 from nerfstudio.fields.base_field import Field, shift_directions_for_tcnn
 
 try:
@@ -277,8 +273,20 @@ class TCNNNerfactoField(Field):
 
         # appearance
         if self.training:
-            embedded_appearance = self.embedding_appearance(camera_indices)
+            if ray_samples.has_test_view:
+                # Since embedding appearance is nn.Embedding, of shape [num_images]
+                # directly using camera_indices will result in OOB
+                padding_num = camera_indices.shape[0] // 4
+                actual_ray_num = padding_num * 3
+                c_inds = camera_indices[:actual_ray_num, ...]
+                embedded_appearance = self.embedding_appearance(c_inds)
+                padding = torch.zeros((padding_num, ) + embedded_appearance.shape[1:], 
+                        device = embedded_appearance.device, dtype = embedded_appearance.dtype)
+                embedded_appearance = torch.cat((embedded_appearance, padding), dim = 0)
+            else:
+                embedded_appearance = self.embedding_appearance(camera_indices)
         else:
+            # Test time will not have test view rays
             if self.use_average_appearance_embedding:
                 embedded_appearance = torch.ones(
                     (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
@@ -289,8 +297,18 @@ class TCNNNerfactoField(Field):
                 )
 
         # transients
+        # TODO: it seems that we are not calculating transient embedding?
         if self.use_transient_embedding and self.training:
-            embedded_transient = self.embedding_transient(camera_indices)
+            if ray_samples.has_test_view:
+                padding_num = camera_indices.shape[0] // 4
+                actual_ray_num = padding_num * 3
+                c_inds = camera_indices[:actual_ray_num, ...]
+                embedded_transient = self.embedding_transient(c_inds)
+                padding = torch.zeros((padding_num, ) + embedded_transient.shape[1:], 
+                        device = embedded_transient.device, dtype = embedded_transient.dtype)
+                embedded_transient = torch.cat((embedded_transient, padding), dim = 0)
+            else:
+                embedded_transient = self.embedding_transient(camera_indices)
             transient_input = torch.cat(
                 [
                     density_embedding.view(-1, self.geo_feat_dim),
@@ -302,6 +320,7 @@ class TCNNNerfactoField(Field):
             outputs[FieldHeadNames.UNCERTAINTY] = self.field_head_transient_uncertainty(x)
             outputs[FieldHeadNames.TRANSIENT_RGB] = self.field_head_transient_rgb(x)
             outputs[FieldHeadNames.TRANSIENT_DENSITY] = self.field_head_transient_density(x)
+            # Qianyue He's note: did we use these fields?
 
         # semantics
         if self.use_semantics:

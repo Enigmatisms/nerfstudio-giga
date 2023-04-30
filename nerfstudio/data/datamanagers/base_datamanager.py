@@ -36,40 +36,44 @@ from nerfstudio.cameras.camera_optimizers import CameraOptimizerConfig
 from nerfstudio.cameras.cameras import CameraType
 from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.configs.base_config import InstantiateConfig
-from nerfstudio.data.dataparsers.arkitscenes_dataparser import (
-    ARKitScenesDataParserConfig,
-)
+from nerfstudio.data.dataparsers.arkitscenes_dataparser import \
+    ARKitScenesDataParserConfig
 from nerfstudio.data.dataparsers.base_dataparser import DataparserOutputs
-from nerfstudio.data.dataparsers.blender_dataparser import BlenderDataParserConfig
+from nerfstudio.data.dataparsers.blender_dataparser import \
+    BlenderDataParserConfig
 from nerfstudio.data.dataparsers.dnerf_dataparser import DNeRFDataParserConfig
-from nerfstudio.data.dataparsers.dycheck_dataparser import DycheckDataParserConfig
-from nerfstudio.data.dataparsers.instant_ngp_dataparser import (
-    InstantNGPDataParserConfig,
-)
-from nerfstudio.data.dataparsers.minimal_dataparser import MinimalDataParserConfig
-from nerfstudio.data.dataparsers.nerfosr_dataparser import NeRFOSRDataParserConfig
-from nerfstudio.data.dataparsers.nerfstudio_dataparser import NerfstudioDataParserConfig
-from nerfstudio.data.dataparsers.nuscenes_dataparser import NuScenesDataParserConfig
-from nerfstudio.data.dataparsers.phototourism_dataparser import (
-    PhototourismDataParserConfig,
-)
-from nerfstudio.data.dataparsers.scannet_dataparser import ScanNetDataParserConfig
-from nerfstudio.data.dataparsers.sdfstudio_dataparser import SDFStudioDataParserConfig
-from nerfstudio.data.dataparsers.sitcoms3d_dataparser import Sitcoms3DDataParserConfig
+from nerfstudio.data.dataparsers.dycheck_dataparser import \
+    DycheckDataParserConfig
+from nerfstudio.data.dataparsers.instant_ngp_dataparser import \
+    InstantNGPDataParserConfig
+from nerfstudio.data.dataparsers.minimal_dataparser import \
+    MinimalDataParserConfig
+from nerfstudio.data.dataparsers.nerfosr_dataparser import \
+    NeRFOSRDataParserConfig
+from nerfstudio.data.dataparsers.nerfstudio_dataparser import \
+    NerfstudioDataParserConfig
+from nerfstudio.data.dataparsers.nuscenes_dataparser import \
+    NuScenesDataParserConfig
+from nerfstudio.data.dataparsers.phototourism_dataparser import \
+    PhototourismDataParserConfig
+from nerfstudio.data.dataparsers.scannet_dataparser import \
+    ScanNetDataParserConfig
+from nerfstudio.data.dataparsers.sdfstudio_dataparser import \
+    SDFStudioDataParserConfig
+from nerfstudio.data.dataparsers.sitcoms3d_dataparser import \
+    Sitcoms3DDataParserConfig
 from nerfstudio.data.datasets.base_dataset import InputDataset
-from nerfstudio.data.pixel_samplers import (
-    EquirectangularPixelSampler,
-    PatchPixelSampler,
-    PixelSampler,
-)
-from nerfstudio.data.utils.dataloaders import (
-    CacheDataloader,
-    FixedIndicesEvalDataloader,
-    RandIndicesEvalDataloader,
-)
+from nerfstudio.data.pixel_samplers import (EquirectangularPixelSampler,
+                                            PatchPixelSampler, PixelSampler)
+from nerfstudio.data.utils.dataloaders import (CacheDataloader,
+                                               FixedIndicesEvalDataloader,
+                                               RandIndicesEvalDataloader)
 from nerfstudio.data.utils.nerfstudio_collate import nerfstudio_collate
-from nerfstudio.engine.callbacks import TrainingCallback, TrainingCallbackAttributes
-from nerfstudio.model_components.ray_generators import PerturbRayGenerator, RayGenerator
+from nerfstudio.engine.callbacks import (TrainingCallback,
+                                         TrainingCallbackAttributes)
+from nerfstudio.model_components.ray_generators import (AllViewsRayGenerator,
+                                                        PerturbRayGenerator,
+                                                        RayGenerator)
 from nerfstudio.utils.misc import IterableWrapper
 
 CONSOLE = Console(width=120)
@@ -377,6 +381,8 @@ class VanillaDataManagerConfig(DataManagerConfig):
     """Whether not to split train and evaluation dataset, use all the images for training. For few shot learning."""
     intrinsic_scale_factor: Optional[float] = None
     """Scale the intrinsic only. For datasets that contains scaled images but not the camera intrinsics"""
+    test_view_sample_iter: int = -1
+    """Whether to sample test views to remove floaters."""
 
 
 class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
@@ -419,7 +425,6 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         if self.config.skip_eval:
             self.dataparser_config.train_split_fraction = 1.0
         if self.config.intrinsic_scale_factor is not None:
-            # FIXME: by Enigmatisms, this is too ugly but I can't pass this directly into the inner config
             self.dataparser_config.intrinsic_scale_factor = \
                 self.config.intrinsic_scale_factor
         if self.config.data is not None:
@@ -472,7 +477,11 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         # Otherwise, use the default pixel sampler
         if is_equirectangular.any():
             CONSOLE.print("[bold yellow]Warning: Some cameras are equirectangular, but using default pixel sampler.")
-        return PixelSampler(*args, **kwargs)
+        # By Qianyue He: pixel sampler will now sample from testing views
+        pixel_sampler = PixelSampler(*args, **kwargs)
+        pixel_sampler.test_view_sample_iter = self.config.test_view_sample_iter
+        pixel_sampler.num_test_views = self.train_dataparser_outputs.num_test_views
+        return pixel_sampler
 
     def setup_train(self):
         """Sets up the data loaders for training"""
@@ -492,17 +501,23 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.train_camera_optimizer = self.config.camera_optimizer.setup(
             num_cameras=self.train_dataset.cameras.size, device=self.device
         )
-        if self.config.sample_unseen_view:
-            self.train_ray_generator = PerturbRayGenerator(
+        if self.config.test_view_sample_iter > 0:
+            self.train_ray_generator = AllViewsRayGenerator(
                 self.train_dataset.cameras.to(self.device),
-                self.train_camera_optimizer, perturb_sigma = self.config.perturb_rot_sigma,
-                random_ratio = self.config.unseen_ratio
+                self.train_camera_optimizer, len(self.train_dataset)
             )
         else:
-            self.train_ray_generator = RayGenerator(
-                self.train_dataset.cameras.to(self.device),
-                self.train_camera_optimizer,
-            )
+            if self.config.sample_unseen_view:
+                self.train_ray_generator = PerturbRayGenerator(
+                    self.train_dataset.cameras.to(self.device),
+                    self.train_camera_optimizer, perturb_sigma = self.config.perturb_rot_sigma,
+                    random_ratio = self.config.unseen_ratio
+                )
+            else:
+                self.train_ray_generator = RayGenerator(
+                    self.train_dataset.cameras.to(self.device),
+                    self.train_camera_optimizer,
+                )
 
     def setup_eval(self):
         """Sets up the data loader for evaluation"""
@@ -549,7 +564,6 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         batch = self.train_pixel_sampler.sample(image_batch)
         ray_indices = batch["indices"]
         ray_bundle = self.train_ray_generator(ray_indices)
-        # Maybe we can add another field here, to sample unseen poses (without refinement)
         return ray_bundle, batch
 
     def next_eval(self, step: int) -> Tuple[RayBundle, Dict]:

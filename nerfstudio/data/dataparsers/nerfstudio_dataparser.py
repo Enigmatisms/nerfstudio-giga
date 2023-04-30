@@ -27,12 +27,11 @@ from rich.console import Console
 from typing_extensions import Literal
 
 from nerfstudio.cameras import camera_utils
-from nerfstudio.cameras.cameras import CAMERA_MODEL_TO_TYPE, Cameras, CameraType
-from nerfstudio.data.dataparsers.base_dataparser import (
-    DataParser,
-    DataParserConfig,
-    DataparserOutputs,
-)
+from nerfstudio.cameras.cameras import (CAMERA_MODEL_TO_TYPE, Cameras,
+                                        CameraType)
+from nerfstudio.data.dataparsers.base_dataparser import (DataParser,
+                                                         DataParserConfig,
+                                                         DataparserOutputs)
 from nerfstudio.data.scene_box import SceneBox
 from nerfstudio.utils.io import load_from_json
 
@@ -110,9 +109,16 @@ class Nerfstudio(DataParser):
         height = []
         width = []
         distort = []
+        test_views = []
 
         for frame in meta["frames"]:
-            filepath = PurePath(frame["file_path"])
+            # TODO: this should be modified
+            filepath = frame["file_path"]
+            if filepath == "test_view":
+                # this will not affect image dataset
+                test_views.append(frame)
+                continue
+            filepath = PurePath(filepath)
             fname = self._get_fname(filepath, data_dir)
             if not fname.exists():
                 num_skipped_image_filenames += 1
@@ -164,6 +170,9 @@ class Nerfstudio(DataParser):
                 depth_fname = self._get_fname(depth_filepath, data_dir, downsample_folder_prefix="depths_")
                 depth_filenames.append(depth_fname)
 
+        for frame in test_views:            # test view only needs its pose
+            poses.append(np.array(frame["transform_matrix"]))
+
         if num_skipped_image_filenames >= 0:
             CONSOLE.log(f"Skipping {num_skipped_image_filenames} files in dataset split {split}.")
         assert (
@@ -200,7 +209,11 @@ class Nerfstudio(DataParser):
             raise RuntimeError(f"The dataset's list of filenames for split {split} is missing.")
         else:
             # filter image_filenames and poses based on train/eval split percentage
-            num_images = len(image_filenames)
+
+            # TODO: this should be modified, since we may have more views than images
+            num_images = len(image_filenames) + len(test_views)
+            if test_views and self.config.train_split_fraction < 1:
+                raise ValueError("When test views exist in the dataset, do not split.")
             num_train_images = math.ceil(num_images * self.config.train_split_fraction)
             num_eval_images = num_images - num_train_images
             i_all = np.arange(num_images)
@@ -237,9 +250,10 @@ class Nerfstudio(DataParser):
         poses[:, :3, 3] *= scale_factor
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
-        image_filenames = [image_filenames[i] for i in indices]
-        mask_filenames = [mask_filenames[i] for i in indices] if len(mask_filenames) > 0 else []
-        depth_filenames = [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
+        image_indices = indices if not test_views else indices[:len(image_filenames)]
+        image_filenames = [image_filenames[i] for i in image_indices]
+        mask_filenames = [mask_filenames[i] for i in image_indices] if len(mask_filenames) > 0 else []
+        depth_filenames = [depth_filenames[i] for i in image_indices] if len(depth_filenames) > 0 else []
         poses = poses[indices]
 
         # in x,y,z order
@@ -256,6 +270,8 @@ class Nerfstudio(DataParser):
         else:
             camera_type = CameraType.PERSPECTIVE
 
+        # FIXME: Qianyue He -- I only consider camera intrinsics being fixed case
+        # So fx, fy, etc are not modified
         idx_tensor = torch.tensor(indices, dtype=torch.long)
         fx = float(meta["fl_x"]) if fx_fixed else torch.tensor(fx, dtype=torch.float32)[idx_tensor]
         fy = float(meta["fl_y"]) if fy_fixed else torch.tensor(fy, dtype=torch.float32)[idx_tensor]
@@ -317,6 +333,7 @@ class Nerfstudio(DataParser):
                 "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
                 "depth_unit_scale_factor": self.config.depth_unit_scale_factor,
             },
+            num_test_views=len(test_views)
         )
         return dataparser_outputs
 

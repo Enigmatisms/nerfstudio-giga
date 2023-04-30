@@ -23,7 +23,8 @@ from torchtyping import TensorType
 from typing_extensions import Literal
 
 from nerfstudio.cameras.rays import RaySamples
-from nerfstudio.utils.math import masked_reduction, normalized_depth_scale_and_shift
+from nerfstudio.utils.math import (masked_reduction,
+                                   normalized_depth_scale_and_shift)
 
 L1Loss = nn.L1Loss
 MSELoss = nn.MSELoss
@@ -334,13 +335,17 @@ def depth_loss(
     Returns:
         Depth loss scalar.
     """
+    num_sample_ray = termination_depth.shape[0]
+    steps = (ray_samples.frustums.starts + ray_samples.frustums.ends) / 2
+    steps = steps[:num_sample_ray, ...]
+    weights = weights[:num_sample_ray, ...]
+    directions_norm = directions_norm[:num_sample_ray, ...]
     if not is_euclidean:
         termination_depth = termination_depth * directions_norm
-    # print(termination_depth.max() if termination_depth.numel() else -1, ray_samples.frustums.starts.min(), ray_samples.frustums.ends.min())
-    steps = (ray_samples.frustums.starts + ray_samples.frustums.ends) / 2
-
+    
     if depth_loss_type == DepthLossType.DS_NERF:
         lengths = ray_samples.frustums.ends - ray_samples.frustums.starts
+        lengths = lengths[:num_sample_ray, ...]
         return ds_nerf_depth_loss(weights, termination_depth, steps, lengths, sigma)
 
     if depth_loss_type == DepthLossType.URF:
