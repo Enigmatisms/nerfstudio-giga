@@ -30,37 +30,28 @@ from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 from typing_extensions import Literal
 
 from nerfstudio.cameras.rays import RayBundle
-from nerfstudio.engine.callbacks import (
-    TrainingCallback,
-    TrainingCallbackAttributes,
-    TrainingCallbackLocation,
-)
+from nerfstudio.engine.callbacks import (TrainingCallback,
+                                         TrainingCallbackAttributes,
+                                         TrainingCallbackLocation)
 from nerfstudio.field_components.field_heads import FieldHeadNames
 from nerfstudio.field_components.spatial_distortions import SceneContraction
 from nerfstudio.fields.density_fields import HashMLPDensityField
 from nerfstudio.fields.nerfacto_field import TCNNNerfactoField
-from nerfstudio.model_components.losses import (
-    HuberLoss,
-    MSELoss,
-    distortion_loss,
-    entropy_loss,
-    interlevel_loss,
-    occlusion_regularization,
-    orientation_loss,
-    pred_normal_loss,
-    unseen_kl_divergence,
-)
-from nerfstudio.model_components.ray_samplers import (
-    ProposalNetworkSampler,
-    UniformSampler,
-)
-from nerfstudio.model_components.renderers import (
-    AccumulationRenderer,
-    DepthRenderer,
-    NormalsRenderer,
-    RGBRenderer,
-)
-from nerfstudio.model_components.scene_colliders import NearFarCollider
+from nerfstudio.model_components.losses import (HuberLoss, MSELoss,
+                                                distortion_loss, entropy_loss,
+                                                interlevel_loss,
+                                                occlusion_regularization,
+                                                orientation_loss,
+                                                pred_normal_loss,
+                                                unseen_kl_divergence)
+from nerfstudio.model_components.ray_samplers import (ProposalNetworkSampler,
+                                                      UniformSampler)
+from nerfstudio.model_components.renderers import (AccumulationRenderer,
+                                                   DepthRenderer,
+                                                   NormalsRenderer,
+                                                   RGBRenderer)
+from nerfstudio.model_components.scene_colliders import \
+    NearFarWithTestViewCollider
 from nerfstudio.model_components.scheduler import SimpleScheduler
 from nerfstudio.model_components.shaders import NormalsShader
 from nerfstudio.models.base_model import Model, ModelConfig
@@ -76,6 +67,10 @@ class NerfactoModelConfig(ModelConfig):
     """How far along the ray to start sampling."""
     far_plane: float = 1000.0
     """How far along the ray to stop sampling."""
+    test_near_plane: float = 0.01
+    """How far along the ray (for test view rays) to start sampling."""
+    test_far_plane: float = 5.0
+    """How far along the ray (for test view rays) to stop sampling."""
     background_color: Literal["random", "last_sample", "black", "white"] = "last_sample"
     """Whether to randomize the background color."""
     hidden_dim: int = 64
@@ -149,6 +144,8 @@ class NerfactoModelConfig(ModelConfig):
     """Minimum occlusion loss multiplier for regularing near camera density."""
     max_occ_loss_mult: float = 0.001
     """Maximum occlusion loss multiplier for regularing near camera density."""
+    test_occ_loss_mult: float = 0.001
+    """Occlusion loss multiplier for test views."""
     occ_reg_iters: int = 30000
     """Number of iterations to use for occlusion regularization."""
     sigma_perturb_std: float = 0.0
@@ -156,9 +153,11 @@ class NerfactoModelConfig(ModelConfig):
     sigma_perturb_iter: int = 0
     """Set sigma perturbation to 0. when reaching this value."""
     kl_divergence_mult: float = 0.0001
-    """KL divergence for unseen view regularization"""
+    """KL divergence for unseen view regularization."""
     sample_unseen_views: bool = False
-    """Whether to sample rays in perturbed unseen views (from train views)"""
+    """Whether to sample rays in perturbed unseen views (from train views)."""
+    freeze_field: bool = False
+    """Train pose only in order to optimize test view camera pose to match the given sample."""
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -237,7 +236,10 @@ class NerfactoModel(Model):
         )
 
         # Collider
-        self.collider = NearFarCollider(near_plane=self.config.near_plane, far_plane=self.config.far_plane)
+        # Change the near far collider
+        self.collider = NearFarWithTestViewCollider(near_plane=self.config.near_plane, far_plane=self.config.far_plane,
+            test_near=self.config.test_near_plane, test_far=self.config.test_far_plane
+        )
 
         # renderers
         self.renderer_rgb = RGBRenderer(background_color=self.config.background_color)
@@ -248,7 +250,9 @@ class NerfactoModel(Model):
         # shaders
         self.normals_shader = NormalsShader()
 
-        self.rgb_loss = MSELoss()       # nerfacto uses MSE Loss
+        self.rgb_loss = HuberLoss(delta = 0.1) if self.config.freeze_field else MSELoss()       
+        # nerfacto uses MSE Loss, while pure pose refinement needs Robust Loss
+        # Since the input sample could be extremely noisy and degraded
 
         # metrics
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
@@ -260,6 +264,16 @@ class NerfactoModel(Model):
         self.occ_thresh_sch = SimpleScheduler(self.config.max_occ_threshold,
             self.config.min_occ_threshold, self.config.occ_reg_iters)
         self.iter_cnt = 0
+
+        if self.config.freeze_field:
+            self.requires_grad_(False)
+            self.eval()
+            self.field.eval()
+            self.proposal_networks.eval()
+            self.proposal_sampler.eval()
+            self.renderer_rgb.eval()
+            # Camera optimizer is not here
+            input("Freeze all fields and stop training the network field.")
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         param_groups = {}
@@ -329,6 +343,7 @@ class NerfactoModel(Model):
             outputs["weights_list"] = weights_list
             outputs["ray_samples_list"] = ray_samples_list
 
+        # since we want density in test views (short frustum) to be zero, we don't need to worry about other loss here
         if self.training and self.config.predict_normals:
             outputs["rendered_orientation_loss"] = orientation_loss(
                 weights.detach(), field_outputs[FieldHeadNames.NORMALS], ray_bundle.directions
@@ -349,6 +364,17 @@ class NerfactoModel(Model):
                 threshold = self.occ_thresh_sch.update()
                 outputs["rendered_occ_regularization"] = occlusion_regularization(
                     ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], threshold)
+                
+        if self.training and ray_bundle.has_test_view:
+            sampled_rays = ray_samples.deltas.shape[0]
+            valid_sample_num = sampled_rays // 4 * 3
+            test_view_mask = torch.zeros(sampled_rays, dtype = bool, device = ray_samples.deltas.device)
+            test_view_mask[valid_sample_num:] = True 
+            if test_view_mask.any():
+                outputs["rendered_test_occ_loss"] = occlusion_regularization(
+                    ray_samples.deltas[test_view_mask, ...], field_outputs[FieldHeadNames.DENSITY][test_view_mask, ...], 1.0
+                )
+                outputs["train_view_mask"] = ~test_view_mask
 
         # We do sample unseen views, and a ray_bundle that contains 
         if self.training and self.config.sample_unseen_views and ray_bundle.has_unseen:
@@ -369,13 +395,19 @@ class NerfactoModel(Model):
             half_num = image.shape[0] >> 1
             metrics_dict["psnr"] = self.psnr(outputs["rgb"][:half_num], image[:half_num])
         else:
-            metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
+            rgb = outputs["rgb"]
+            if 'train_view_mask' in outputs:
+                train_view_mask = outputs['train_view_mask']
+                rgb = rgb[train_view_mask]
+            # Note that with test views, image is already indexed (batch['image'])
+            metrics_dict["psnr"] = self.psnr(rgb, image)
         
-        ray_num, channel = outputs["rgb"].shape
-        transformed_rgb = outputs["rgb"].reshape(ray_num // 64, 64, channel)
-        transformed_img = image.reshape(ray_num // 64, 64, channel)
-        transformed_rgb = transformed_rgb.permute(2, 0, 1).unsqueeze(0)
-        transformed_img = transformed_img.permute(2, 0, 1).unsqueeze(0)
+        # Qianyue He's note: if we don't need ssim then we don't need to do these computation
+        # ray_num, channel = outputs["rgb"].shape
+        # transformed_rgb = outputs["rgb"].reshape(ray_num // 64, -1, channel)
+        # transformed_img = image.reshape(ray_num // 64, -1, channel)
+        # transformed_rgb = transformed_rgb.permute(2, 0, 1).unsqueeze(0)
+        # transformed_img = transformed_img.permute(2, 0, 1).unsqueeze(0)
         # metrics_dict["ssim"] = self.ssim(transformed_rgb, transformed_img)
         # metrics_dict["lpips"] = self.lpips(outputs["rgb"], image)         # LPIPS is not evaluated for now
         if self.training:
@@ -389,7 +421,11 @@ class NerfactoModel(Model):
             half_num = image.shape[0] >> 1
             loss_dict["rgb_loss"] = self.rgb_loss(image[:half_num], outputs["rgb"][:half_num])
         else:
-            loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
+            rgb = outputs["rgb"]
+            if 'train_view_mask' in outputs:
+                train_view_mask = outputs['train_view_mask']
+                rgb = rgb[train_view_mask]
+            loss_dict["rgb_loss"] = self.rgb_loss(image, rgb)
         if self.training:
             loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
                 outputs["weights_list"], outputs["ray_samples_list"]
@@ -421,6 +457,8 @@ class NerfactoModel(Model):
                 loss_dict["occlusion_loss_nw"] = occ_loss.detach()                  # no multiplier and gradient
             if self.config.sample_unseen_views and "rendered_unseen_kl" in outputs:
                 loss_dict["unseen_kl_divergence"] = self.config.kl_divergence_mult * torch.mean(outputs["rendered_unseen_kl"])
+            if "rendered_test_occ_loss" in outputs:
+                loss_dict["test_occ_loss"] = self.config.test_occ_loss_mult * torch.mean(outputs["rendered_test_occ_loss"])
         return loss_dict
 
     def get_image_metrics_and_images(

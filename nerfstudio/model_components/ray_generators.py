@@ -135,3 +135,19 @@ class PerturbRayGenerator(RayGenerator):
             ray_bundle.has_unseen = True
 
         return ray_bundle
+    
+class AllViewsRayGenerator(RayGenerator):
+    """ This ray generator will also generate rays in the test views
+        to help us regularize the density of views not seen in the training set,
+        preventing floaters from blocking test views. The rays under test views:
+        - should have all the losses but occlusion loss disabled
+    """
+    def __init__(self, cameras: Cameras, pose_optimizer: CameraOptimizer, train_view_num: int):
+        super().__init__(cameras, pose_optimizer)
+        self.train_view_num = train_view_num
+
+    def forward(self, ray_indices: TensorType) -> RayBundle:
+        ray_bundle = super().forward(ray_indices)
+        ray_bundle.has_test_view = (ray_indices[:, 0] >= self.train_view_num).any().item()
+        return ray_bundle
+    

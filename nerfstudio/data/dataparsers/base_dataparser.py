@@ -69,6 +69,8 @@ class DataparserOutputs:
     """Transform applied by the dataparser."""
     dataparser_scale: float = 1.0
     """Scale applied by the dataparser."""
+    num_test_views: int = 0
+    """Number of test views in the training set."""
 
     def as_dict(self) -> dict:
         """Returns the dataclass as a dictionary."""

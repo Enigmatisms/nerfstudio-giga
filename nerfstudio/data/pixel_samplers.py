@@ -35,6 +35,9 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
         self.kwargs = kwargs
         self.num_rays_per_batch = num_rays_per_batch
         self.keep_full_image = keep_full_image
+        self.test_view_sample_iter = -1
+        self.num_test_views = 0
+        self.iter_cnt = 0
 
     def set_num_rays_per_batch(self, num_rays_per_batch: int):
         """Set the number of rays to sample per batch.
@@ -61,15 +64,31 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
             num_images: number of images to sample over
             mask: mask of possible pixels in an image to sample from.
         """
+        # FIXME: not all branches are considered by Qianyue He's modification
         if isinstance(mask, torch.Tensor):
             nonzero_indices = torch.nonzero(mask[..., 0], as_tuple=False)
             chosen_indices = random.sample(range(len(nonzero_indices)), k=batch_size)
             indices = nonzero_indices[chosen_indices]
         else:
-            indices = torch.floor(
-                torch.rand((batch_size, 3), device=device)
-                * torch.tensor([num_images, image_height, image_width], device=device)
-            ).long()
+            # 1/4 test views
+            if self.num_test_views and self.iter_cnt < self.test_view_sample_iter:
+                test_sample_num = batch_size // 4
+                image_sample_num = test_sample_num * 3
+                image_indices = torch.floor(
+                    torch.rand((image_sample_num, 3), device=device)
+                    * torch.tensor([num_images, image_height, image_width], device=device)
+                ).long()
+                test_indices = torch.floor(
+                    torch.rand((test_sample_num, 3), device=device)
+                    * torch.tensor([self.num_test_views, image_height, image_width], device=device)
+                ).long()
+                test_indices[:, 0] += num_images
+                indices = torch.cat((image_indices, test_indices), dim = 0)
+            else:                       # no test views
+                indices = torch.floor(
+                    torch.rand((batch_size, 3), device=device)
+                    * torch.tensor([num_images, image_height, image_width], device=device)
+                ).long()
 
         return indices
 
@@ -87,7 +106,6 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
 
         device = batch["image"].device
         num_images, image_height, image_width, _ = batch["image"].shape
-
         if "mask" in batch:
             indices = self.sample_method(
                 num_rays_per_batch, num_images, image_height, image_width, mask=batch["mask"], device=device
@@ -95,20 +113,33 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
         else:
             indices = self.sample_method(num_rays_per_batch, num_images, image_height, image_width, device=device)
 
-        c, y, x = (i.flatten() for i in torch.split(indices, 1, dim=-1))
-        collated_batch = {
-            key: value[c, y, x] for key, value in batch.items() if key != "image_idx" and value is not None
-        }
-
-        assert collated_batch["image"].shape == (num_rays_per_batch, 3), collated_batch["image"].shape
-
-        # Needed to correct the random indices to their actual camera idx locations.
-        indices[:, 0] = batch["image_idx"][c]
+        if self.num_test_views and self.iter_cnt < self.test_view_sample_iter:
+            # split 3:1 for train_view rays and test_view rays
+            actual_sample_num = num_rays_per_batch // 4 * 3
+            camera_indices = indices[:actual_sample_num, ...]
+            c, y, x = (i.flatten() for i in torch.split(camera_indices, 1, dim=-1))
+            collated_batch = {
+                key: value[c, y, x] for key, value in batch.items() if key != "image_idx" and value is not None
+            }
+            indices[:actual_sample_num, 0] = batch["image_idx"][c]
+            # indices should be remapped
+        else:
+            c, y, x = (i.flatten() for i in torch.split(indices, 1, dim=-1))
+            collated_batch = {
+                key: value[c, y, x] for key, value in batch.items() if key != "image_idx" and value is not None
+            }
+            # Needed to correct the random indices to their actual camera idx locations.
+            # Qianyue He's note: camera and images should match, but test views have no attached images
+            # Therefore we don't need to worry about test indices
+            # This operation is basiclly doing remapping
+            indices[:, 0] = batch["image_idx"][c]
+        # Qianyue He' note: I lifted the requirement of collated_batch.shape[0] === num_rays_per_batch
+        assert collated_batch["image"].shape
         collated_batch["indices"] = indices  # with the abs camera indices
 
         if keep_full_image:
             collated_batch["full_image"] = batch["image"]
-
+        self.iter_cnt += 1
         return collated_batch
 
     def collate_image_dataset_batch_list(self, batch: Dict, num_rays_per_batch: int, keep_full_image: bool = False):

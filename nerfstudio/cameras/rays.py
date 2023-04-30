@@ -119,6 +119,8 @@ class RaySamples(TensorDataclass):
 
     times: Optional[TensorType[..., 1]] = None
     """Times at which rays are sampled"""
+    has_test_view: bool = False
+    """Whether ray samples contains test view rays"""
 
     def get_weights(self, densities: TensorType[..., "num_samples", 1]) -> TensorType[..., "num_samples", 1]:
         """Return weights based on predicted densities
@@ -187,6 +189,8 @@ class RayBundle(TensorDataclass):
     """Times at which rays are sampled"""
     has_unseen: bool = False
     """Whether the current ray bundle has image RGB supervision (could be generated from perturbing train-view rays)"""
+    has_test_view: bool = False
+    """Whether the current ray is sampled under the test view, in test view we only calculate occlusion (and optinally: entropy loss)"""
 
     def set_camera_indices(self, camera_index: int) -> None:
         """Sets all the camera indices to a specific camera index.
@@ -261,5 +265,4 @@ class RayBundle(TensorDataclass):
             metadata=shaped_raybundle_fields.metadata,
             times=None if self.times is None else self.times[..., None],  # [..., 1, 1]
         )
-
         return ray_samples
