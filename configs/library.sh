@@ -1,6 +1,9 @@
+file_name="transforms${2}"
+folder_name="library${2}"
+
 ns-train depth-nerfacto \
-    --data ${1}/Library_IGEV/transforms_new.json \
-    --timestamp library_new \
+    --data ${1}/Library/$file_name.json \
+    --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
@@ -31,8 +34,8 @@ ns-train depth-nerfacto \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.model.test-occ-loss-mult 0.05 \
     --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.9 \
-    --pipeline.datamanager.test-view-sample-iter 2000 \
+    --pipeline.model.test-far-plane 0.2 \
+    --pipeline.datamanager.test-view-sample-iter 1000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
@@ -40,8 +43,8 @@ ns-train depth-nerfacto \
     --max-num-iterations 40000
 
 ns-train depth-nerfacto \
-    --data ${1}/Library_IGEV/transforms_new.json \
-    --load-dir ./outputs/Library_IGEV/depth-nerfacto/library_new/nerfstudio_models/ \
+    --data ${1}/Library/$file_name.json \
+    --load-dir ./outputs/Library/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \

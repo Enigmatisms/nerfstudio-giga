@@ -1,6 +1,9 @@
+file_name="transforms${2}"
+folder_name="peony${2}"
+
 ns-train depth-nerfacto \
-    --data ${1}/Peony_IGEV/transforms_new.json \
-    --timestamp peony_new \
+    --data ${1}/PeonyGarden/$file_name.json \
+    --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
@@ -15,10 +18,10 @@ ns-train depth-nerfacto \
     --pipeline.model.entropy-threshold 0.01 \
     --pipeline.model.entropy-loss-mult 0.0005 \
     --pipeline.model.use-occ-regularization True \
-    --pipeline.model.min-occ-threshold 0.1 \
-    --pipeline.model.max-occ-threshold 0.2 \
+    --pipeline.model.min-occ-threshold 0.02 \
+    --pipeline.model.max-occ-threshold 0.15 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
-    --pipeline.model.max-occ-loss_mult 0.0005 \
+    --pipeline.model.max-occ-loss_mult 0.0003 \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
@@ -30,9 +33,9 @@ ns-train depth-nerfacto \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.model.test-occ-loss-mult 0.05 \
-    --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.2 \
-    --pipeline.datamanager.test-view-sample-iter 2000 \
+    --pipeline.model.test-near-plane 0.01 \
+    --pipeline.model.test-far-plane 0.05 \
+    --pipeline.datamanager.test-view-sample-iter 1000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
@@ -40,8 +43,8 @@ ns-train depth-nerfacto \
     --max-num-iterations 45000
 
 ns-train depth-nerfacto \
-    --data ${1}/Peony_IGEV/transforms_new.json \
-    --load-dir ./outputs/Peony_IGEV/depth-nerfacto/peony_new/nerfstudio_models/ \
+    --data ${1}/PeonyGarden/$file_name.json \
+    --load-dir ./outputs/PeonyGarden/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \

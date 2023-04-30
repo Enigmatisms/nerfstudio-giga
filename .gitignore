@@ -163,7 +163,8 @@ cython_debug/
 #.idea/
 
 # Experiments and outputs
-outputs/
+outputs/*
+!outputs/copier.sh
 exports/
 renders/
 # tensorboard log files
