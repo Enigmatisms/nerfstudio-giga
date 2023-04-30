@@ -1,6 +1,9 @@
+file_name="transforms${2}"
+folder_name="old_gate${2}"
+
 ns-train depth-nerfacto \
-    --data ${1}/theOldGate_IGEV/transforms_new.json \
-    --timestamp old_gate_new \
+    --data ${1}/theOldGate/$file_name.json \
+    --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
@@ -30,6 +33,10 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.skip-eval True \
     --pipeline.model.sample-unseen-views True \
     --pipeline.model.kl-divergence-mult 0.1 \
+    --pipeline.model.test-occ-loss-mult 0.05 \
+    --pipeline.model.test-near-plane 0.02 \
+    --pipeline.model.test-far-plane 0.2 \
+    --pipeline.datamanager.test-view-sample-iter -2000 \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --pipeline.datamanager.unseen-sample-iter 10000 \
@@ -40,8 +47,8 @@ ns-train depth-nerfacto \
     --max-num-iterations 45000
 
 ns-train depth-nerfacto \
-    --data ${1}/theOldGate_IGEV/transforms_new.json \
-    --load-dir ./outputs/theOldGate_IGEV/depth-nerfacto/old_gate_new/nerfstudio_models/ \
+    --data ${1}/theOldGate/$file_name.json \
+    --load-dir ./outputs/theOldGate/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \

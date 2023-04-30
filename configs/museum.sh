@@ -1,6 +1,9 @@
+file_name="transforms${2}"
+folder_name="museum${2}"
+
 ns-train depth-nerfacto \
-    --data ${1}/Museum_IGEV/transforms_new.json \
-    --timestamp mesuem_new \
+    --data ${1}/Museum/$file_name.json \
+    --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
@@ -32,19 +35,19 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.perturb-rot-sigma 5.0 \
     --pipeline.datamanager.unseen-ratio 1.0 \
     --pipeline.model.kl-divergence-mult 0.1 \
-    --pipeline.model.test-occ-loss-mult 0.05 \
+    --pipeline.model.test-occ-loss-mult 0.001 \
     --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.6 \
-    --pipeline.datamanager.test-view-sample-iter 3000 \
+    --pipeline.model.test-far-plane 0.4 \
+    --pipeline.datamanager.test-view-sample-iter 10000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 40000
+    --max-num-iterations 50000
 
 ns-train depth-nerfacto \
-    --data ${1}/Museum_IGEV/transforms_new.json \
-    --load-dir ./outputs/Museum_IGEV/depth-nerfacto/mesuem_new/nerfstudio_models/ \
+    --data ${1}/Museum/$file_name.json \
+    --load-dir ./outputs/Museum/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \

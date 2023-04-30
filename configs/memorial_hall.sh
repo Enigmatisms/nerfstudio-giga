@@ -1,6 +1,9 @@
+file_name="transforms${2}"
+folder_name="memo${2}"
+
 ns-train depth-nerfacto \
-    --data ${1}/MemorialHall_IGEV/transforms_new.json \
-    --timestamp memo_hall_new \
+    --data ${1}/MemorialHall/$file_name.json \
+    --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
@@ -40,8 +43,8 @@ ns-train depth-nerfacto \
     --max-num-iterations 45000
 
 ns-train depth-nerfacto \
-    --data ${1}/MemorialHall_IGEV/transforms_new.json \
-    --load-dir ./outputs/MemorialHall_IGEV/depth-nerfacto/memo_hall_new/nerfstudio_models/ \
+    --data ${1}/MemorialHall/$file_name.json \
+    --load-dir ./outputs/MemorialHall/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
