@@ -4,12 +4,22 @@
 			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
 			"bookmarks": [
 				{
-					"line": 543,
+					"line": 436,
+					"column": 54,
+					"label": "Datamanager all in once: create train set and call next_train"
+				},
+				{
+					"line": 500,
+					"column": 73,
+					"label": "Camera optimizer is setup here."
+				},
+				{
+					"line": 558,
 					"column": 12,
 					"label": "Next train base implementation"
 				},
 				{
-					"line": 549,
+					"line": 564,
 					"column": 38,
 					"label": "Generate ray bundles and refine pose"
 				}
@@ -64,7 +74,12 @@
 			"path": "nerfstudio/data/pixel_samplers.py",
 			"bookmarks": [
 				{
-					"line": 184,
+					"line": 94,
+					"column": 35,
+					"label": "Pixel sampler"
+				},
+				{
+					"line": 215,
 					"column": 13,
 					"label": "Base pixel sampler"
 				}
@@ -99,17 +114,22 @@
 			"path": "nerfstudio/data/dataparsers/nerfstudio_dataparser.py",
 			"bookmarks": [
 				{
-					"line": 39,
+					"line": 38,
 					"column": 9,
 					"label": "Max auto resolution"
 				},
 				{
-					"line": 62,
+					"line": 61,
 					"column": 11,
 					"label": "Train split fraction could be disabled"
 				},
 				{
-					"line": 236,
+					"line": 114,
+					"column": 34,
+					"label": "File path"
+				},
+				{
+					"line": 249,
 					"column": 35,
 					"label": "Where the scaling factor comes from"
 				}
@@ -119,12 +139,12 @@
 			"path": "nerfstudio/models/nerfacto.py",
 			"bookmarks": [
 				{
-					"line": 253,
+					"line": 256,
 					"column": 56,
 					"label": "Metrics for nerfacto"
 				},
 				{
-					"line": 311,
+					"line": 324,
 					"column": 31,
 					"label": "Render RGB"
 				}
@@ -157,6 +177,11 @@
 					"line": 55,
 					"column": 20,
 					"label": "get numpy images"
+				},
+				{
+					"line": 56,
+					"column": 39,
+					"label": "image_idx is used here"
 				}
 			]
 		},
@@ -164,9 +189,39 @@
 			"path": "nerfstudio/data/dataparsers/base_dataparser.py",
 			"bookmarks": [
 				{
-					"line": 161,
+					"line": 163,
 					"column": 25,
 					"label": "Transform back to original space"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/cameras/rays.py",
+			"bookmarks": [
+				{
+					"line": 169,
+					"column": 15,
+					"label": "Raybundle near far"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/models/base_model.py",
+			"bookmarks": [
+				{
+					"line": 137,
+					"column": 38,
+					"label": "Generate ray bundle and collide with collider"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/fields/nerfacto_field.py",
+			"bookmarks": [
+				{
+					"line": 267,
+					"column": 28,
+					"label": "Appearance embedding and transient embedding calculation"
 				}
 			]
 		}
