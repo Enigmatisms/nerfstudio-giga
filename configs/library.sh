@@ -29,6 +29,10 @@ ns-train depth-nerfacto \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
+    --pipeline.model.test-occ-loss-mult 0.05 \
+    --pipeline.model.test-near-plane 0.02 \
+    --pipeline.model.test-far-plane 0.9 \
+    --pipeline.datamanager.test-view-sample-iter 2000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
@@ -59,8 +63,8 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 2e-3 \
-    --pipeline.model.max-depth-loss-mult 2e-3 \
+    --pipeline.model.min-depth-loss-mult 3e-3 \
+    --pipeline.model.max-depth-loss-mult 3e-3 \
     --pipeline.model.depth-loss-iter 100000 \
     --pipeline.model.depth-sigma 0.01 \
     --pipeline.model.depth-loss-type DS_NERF \
@@ -71,6 +75,6 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
-    --optimizers.fields.optimizer.lr 5e-3 \
-    --optimizers.proposal-networks.optimizer.lr 5e-3 \
+    --optimizers.fields.optimizer.lr 2e-3 \
+    --optimizers.proposal-networks.optimizer.lr 2e-3 \
     --max-num-iterations 64000

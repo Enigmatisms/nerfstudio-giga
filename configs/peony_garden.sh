@@ -29,6 +29,10 @@ ns-train depth-nerfacto \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
+    --pipeline.model.test-occ-loss-mult 0.05 \
+    --pipeline.model.test-near-plane 0.02 \
+    --pipeline.model.test-far-plane 0.2 \
+    --pipeline.datamanager.test-view-sample-iter 2000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
