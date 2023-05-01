@@ -135,7 +135,7 @@ def _render_trajectory_video(
                 render_image = np.concatenate(render_image, axis=1)
                 if output_format == "images":
                     output_idx = original_names[camera_idx] if original_names else camera_idx
-                    media.write_image(output_image_dir / f"{output_idx:05d}.jpg", render_image, fmt = 'JPEG', quality = 95, subsampling = 0)
+                    media.write_image(output_image_dir / f"{output_idx:08d}.jpg", render_image, fmt = 'JPEG', quality = 96, subsampling = 0)
                 if output_format == "video":
                     if writer is None:
                         render_width = int(render_image.shape[1])
