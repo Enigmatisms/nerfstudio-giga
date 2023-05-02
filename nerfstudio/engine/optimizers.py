@@ -116,13 +116,17 @@ class Optimizers:
         for _, optimizer in self.optimizers.items():
             optimizer.zero_grad()
 
-    def optimizer_scaler_step_all(self, grad_scaler: GradScaler) -> None:
+    def optimizer_scaler_step_all(self, grad_scaler: GradScaler, skip_optims: set = None) -> None:
         """Take an optimizer step using a grad scaler.
 
         Args:
             grad_scaler: GradScaler to use
         """
+        # for param_group, optimizer in self.optimizers.items():
+        #     print(param_group, optimizer)
         for param_group, optimizer in self.optimizers.items():
+            if skip_optims and param_group in skip_optims:
+                continue
             max_norm = self.config[param_group]["optimizer"].max_norm
             if max_norm is not None:
                 grad_scaler.unscale_(optimizer)
@@ -150,11 +154,13 @@ class Optimizers:
             lr = scheduler.get_last_lr()[0]
             writer.put_scalar(name=f"learning_rate/{param_group_name}", scalar=lr, step=step)
 
-    def load_optimizers(self, loaded_state: Dict[str, Any]) -> None:
+    def load_optimizers(self, loaded_state: Dict[str, Any], skip: Optional[set] = None) -> None:
         """Helper to load the optimizer state from previous checkpoint
 
         Args:
             loaded_state: the state from the previous checkpoint
         """
         for k, v in loaded_state.items():
+            if skip and k in skip: 
+                continue
             self.optimizers[k].load_state_dict(v)

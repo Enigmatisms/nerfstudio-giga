@@ -23,6 +23,7 @@ from scipy.spatial.transform import Rotation as Rot
 from torch import nn
 from torchtyping import TensorType
 
+import nerfstudio.utils.poses as pose_utils
 from nerfstudio.cameras.camera_optimizers import CameraOptimizer
 from nerfstudio.cameras.cameras import Cameras
 from nerfstudio.cameras.rays import RayBundle
@@ -64,6 +65,14 @@ class RayGenerator(nn.Module):
             camera_opt_to_camera=camera_opt_to_camera,
         )
         return ray_bundle
+    
+    def export_camera_poses(self):
+        """Exporting camera poses, useful when test view camera pose optimization is done."""
+        num_cams = self.cameras.camera_to_worlds.shape[0]
+        device = self.cameras.camera_to_worlds.device
+        camera_opt_to_camera = self.pose_optimizer(torch.arange(num_cams, device = device))
+        c2w = pose_utils.multiply(self.cameras.camera_to_worlds, camera_opt_to_camera)
+        return c2w
 
 class PerturbRayGenerator(RayGenerator):
     """This ray generator aims to generate some rays from an unseen view

@@ -33,14 +33,22 @@ class DepthDataset(InputDataset):
 
     def __init__(self, dataparser_outputs: DataparserOutputs, scale_factor: float = 1.0):
         super().__init__(dataparser_outputs, scale_factor)
-        assert (
-            "depth_filenames" in dataparser_outputs.metadata.keys()
-            and dataparser_outputs.metadata["depth_filenames"] is not None
-        )
+        # no depth is never allowed or opt_no_depth flag is False
+        self.opt_no_depth = False
+        if "opt_no_depth" not in dataparser_outputs.metadata.keys() or \
+            not dataparser_outputs.metadata["opt_no_depth"]:
+                assert (
+                    "depth_filenames" in dataparser_outputs.metadata.keys()
+                    and dataparser_outputs.metadata["depth_filenames"] is not None
+                )
+        else:
+             self.opt_no_depth = True
         self.depth_filenames = self.metadata["depth_filenames"]
         self.depth_unit_scale_factor = self.metadata["depth_unit_scale_factor"]
 
     def get_metadata(self, data: Dict) -> Dict:
+        if self.depth_filenames is None:        # returning empty dict if we are currently doing camera param optimization
+            return dict()
         filepath = self.depth_filenames[data["image_idx"]]
         height = int(self.cameras.height[data["image_idx"]])
 

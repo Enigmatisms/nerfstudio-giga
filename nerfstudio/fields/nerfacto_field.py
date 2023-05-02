@@ -103,6 +103,7 @@ class TCNNNerfactoField(Field):
         sigma_perterb_std: float = 0.0,
         use_average_appearance_embedding: bool = False,
         spatial_distortion: SpatialDistortion = None,
+        original_img_num: int = -1      # FIXME: FIXEME: TODO: 
     ) -> None:
         super().__init__()
 
@@ -115,8 +116,11 @@ class TCNNNerfactoField(Field):
 
         self.spatial_distortion = spatial_distortion
         self.num_images = num_images
+        self.original_img_num = original_img_num
         self.appearance_embedding_dim = appearance_embedding_dim
-        self.embedding_appearance = Embedding(self.num_images, self.appearance_embedding_dim)
+        # Camera optimzation needs this
+        embedding_num = self.original_img_num if self.original_img_num > 0 else self.num_images
+        self.embedding_appearance = Embedding(embedding_num, self.appearance_embedding_dim)
         self.use_average_appearance_embedding = use_average_appearance_embedding
         self.use_transient_embedding = use_transient_embedding
         self.use_semantics = use_semantics
@@ -164,7 +168,8 @@ class TCNNNerfactoField(Field):
         # transients
         if self.use_transient_embedding:
             self.transient_embedding_dim = transient_embedding_dim
-            self.embedding_transient = Embedding(self.num_images, self.transient_embedding_dim)
+            embedding_num = self.original_img_num if self.original_img_num > 0 else self.num_images
+            self.embedding_transient = Embedding(embedding_num, self.transient_embedding_dim)
             self.mlp_transient = tcnn.Network(
                 n_input_dims=self.geo_feat_dim + self.transient_embedding_dim,
                 n_output_dims=hidden_dim_transient,

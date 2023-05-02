@@ -142,7 +142,6 @@ def parser_opts():
 
     # For pose registration
     parser.add_argument("--invalid_th", default = 0.2, help = "Threshold for invalid pose alignment: bigger - fewer modifications to COLMAP pose", type = float)
-    parser.add_argument("--iteration",  default = 1, help = "ICP outer scope iteration number", type = int)
     return parser.parse_args()
 
 def main_output(opts):

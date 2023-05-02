@@ -25,13 +25,8 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 import torch
 import torch.distributed as dist
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-)
+from rich.progress import (BarColumn, MofNCompleteColumn, Progress, TextColumn,
+                           TimeElapsedColumn)
 from torch import nn
 from torch.nn import Parameter
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -39,12 +34,10 @@ from typing_extensions import Literal
 
 from nerfstudio.configs import base_config as cfg
 from nerfstudio.data.datamanagers.base_datamanager import (
-    DataManager,
-    DataManagerConfig,
-    VanillaDataManager,
-    VanillaDataManagerConfig,
-)
-from nerfstudio.engine.callbacks import TrainingCallback, TrainingCallbackAttributes
+    DataManager, DataManagerConfig, VanillaDataManager,
+    VanillaDataManagerConfig)
+from nerfstudio.engine.callbacks import (TrainingCallback,
+                                         TrainingCallbackAttributes)
 from nerfstudio.models.base_model import Model, ModelConfig
 from nerfstudio.utils import profiler
 
@@ -386,6 +379,13 @@ class VanillaPipeline(Pipeline):
         state = {
             (key[len("module.") :] if key.startswith("module.") else key): value for key, value in loaded_state.items()
         }
+        if getattr(self.config.model, "freeze_field", False):
+            # Camera optimization can not load model from the trained checkpoint file
+            renewed_state = {}
+            for key, val in state.items():
+                if not "pose_adjustment" in key:
+                    renewed_state[key] = val
+            state = renewed_state
         self.model.update_to_step(step)
         self.load_state_dict(state, strict=True)
 

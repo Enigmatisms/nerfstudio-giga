@@ -1,4 +1,5 @@
-folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare")
+# folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare")
+folders=("Library")
 
 if [ ""$1 = "" ]; then
     echo "You have specified no <SUFFIX>, which can be ['', '_new', '_no_skew']"
@@ -14,7 +15,8 @@ for folder in ${folders[@]}; do
     CUDA_VISIBLE_DEVICES=0 ns-render \
         --load-config ${folder_name}config.yml \
         --traj filename --camera-path-filename ../dataset/images_and_cams/full/pose_align/$folder/output$1.json \
-        --output-path renders/$folder/ --output_format images
+        --output-path renders/$folder/ --output_format images \
+        --eval-num-rays-per-chunk 4096
 done
 
 # CUDA_VISIBLE_DEVICES=0 python ./train.py

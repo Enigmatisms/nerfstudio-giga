@@ -472,6 +472,8 @@ class LocalWriter:
                         if 'depth_loss' in v:
                             val = f"{v['depth_loss'].item():0.6f}"
                             curr_mssg += f"{val:<20} "
+                        else:
+                            curr_mssg += f"{'Null':<20} "
                         v = f"{v['psnr'].item():0.6f}"
                         # curr_mssg += f"{val:<20} "
                         # v = f"{v['ssim'].item():0.6f}"

@@ -33,6 +33,18 @@ COLORS_DICT = {
 }
 
 
+def get_hex_color(color: str) -> TensorType[3]:
+    """ Parse html-like hexidecimal RGB
+    """
+    if not color.startswith("#"):
+        return WHITE
+    else:
+        rgb = BLACK.clone()
+        for i in range(3):
+            base = 1 + (i << 1)
+            rgb[i] = int(color[base:base + 2], 16) / 255.
+        return rgb
+
 def get_color(color: Union[str, list]) -> TensorType[3]:
     """
     Args:
