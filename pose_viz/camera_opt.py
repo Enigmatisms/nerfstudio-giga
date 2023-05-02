@@ -20,7 +20,7 @@ def parser_opts():
     parser.add_argument("-i", "--input_scene",      required = True, help = "Input scene", type = str)
     parser.add_argument("-m", "--mode",             required = True, default = "new", choices = ["none", "new", "no_skew"], 
                         help = "Input modes to choose from.", type = str)
-    parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/images_and_cams/full/pose_align/", 
+    parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/images_and_cams/full/", 
                         help = "Input pose and camera intrinsics file.", type = str)
     parser.add_argument("-o", "--output_name",      default = "transforms_opt.json", help = "Output file name", type = str)
     parser.add_argument("--input_img_path",         default = "../renders/", help = "Input image file path", type = str)

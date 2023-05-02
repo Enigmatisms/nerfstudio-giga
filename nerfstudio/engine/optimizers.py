@@ -154,11 +154,13 @@ class Optimizers:
             lr = scheduler.get_last_lr()[0]
             writer.put_scalar(name=f"learning_rate/{param_group_name}", scalar=lr, step=step)
 
-    def load_optimizers(self, loaded_state: Dict[str, Any]) -> None:
+    def load_optimizers(self, loaded_state: Dict[str, Any], skip: Optional[set] = None) -> None:
         """Helper to load the optimizer state from previous checkpoint
 
         Args:
             loaded_state: the state from the previous checkpoint
         """
         for k, v in loaded_state.items():
+            if skip and k in skip: 
+                continue
             self.optimizers[k].load_state_dict(v)

@@ -274,7 +274,7 @@ class Trainer:
 
         CONSOLE.rule()
         CONSOLE.print("[bold green]:tada: :tada: :tada: Training Finished :tada: :tada: :tada:", justify="center")
-        if hasattr(self.pipeline.config.model, "freeze_field"):
+        if getattr(self.pipeline.config.model, "freeze_field", False):
             camera_poses = self.pipeline.datamanager.train_ray_generator.export_camera_poses()
             camera_poses = camera_poses.detach().cpu().numpy()
             CONSOLE.print(f"[blue]Camera optimization completed, outputing shape: {camera_poses.shape}")
@@ -366,8 +366,11 @@ class Trainer:
             loaded_state = torch.load(load_path, map_location="cpu")
             self._start_step = loaded_state["step"] + 1
             # load the checkpoints for pipeline, optimizers, and gradient scalar
+            skip_set = None
+            if getattr(self.pipeline.config.model, "freeze_field", False):      # skip loading camera optimizer
+                skip_set = {"camera_opt"}
             self.pipeline.load_pipeline(loaded_state["pipeline"], loaded_state["step"])
-            self.optimizers.load_optimizers(loaded_state["optimizers"])
+            self.optimizers.load_optimizers(loaded_state["optimizers"], skip_set)
             self.grad_scaler.load_state_dict(loaded_state["scalers"])
             CONSOLE.print(f"done loading checkpoint from {load_path}")
         else:

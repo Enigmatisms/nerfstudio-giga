@@ -17,7 +17,7 @@ def parser_opts():
     parser.add_argument("-m", "--mode",             required = True, choices = ["none", "new", "no_skew"], 
                         help = "Input modes to choose from.", type = str)
     parser.add_argument("-i", "--input_path",       default = "../outputs/", help = "Input name", type = str)
-    parser.add_argument("-o", "--output_json_path", default = "../../dataset/images_and_cams/full/pose_align/", 
+    parser.add_argument("-o", "--output_json_path", default = "../../dataset/images_and_cams/full/", 
                         help = "Input pose and camera intrinsics file.", type = str)
     return parser.parse_args()
 

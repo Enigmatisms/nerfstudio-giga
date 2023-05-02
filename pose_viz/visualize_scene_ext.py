@@ -14,8 +14,7 @@ import natsort
 import numpy as np
 import tqdm
 
-secondary_outpath = "../../dataset/images_and_cams/full/pose_align/"
-
+secondary_outpath = "../../dataset/images_and_cams/full/"
 
 def folder_path(path: str, comment: str = ""):
     """Make valid folder"""

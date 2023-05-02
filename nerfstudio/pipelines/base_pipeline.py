@@ -379,6 +379,13 @@ class VanillaPipeline(Pipeline):
         state = {
             (key[len("module.") :] if key.startswith("module.") else key): value for key, value in loaded_state.items()
         }
+        if getattr(self.config.model, "freeze_field", False):
+            # Camera optimization can not load model from the trained checkpoint file
+            renewed_state = {}
+            for key, val in state.items():
+                if not "pose_adjustment" in key:
+                    renewed_state[key] = val
+            state = renewed_state
         self.model.update_to_step(step)
         self.load_state_dict(state, strict=True)
 
