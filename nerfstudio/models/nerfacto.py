@@ -71,7 +71,7 @@ class NerfactoModelConfig(ModelConfig):
     """How far along the ray (for test view rays) to start sampling."""
     test_far_plane: float = 5.0
     """How far along the ray (for test view rays) to stop sampling."""
-    background_color: Literal["random", "last_sample", "black", "white"] = "last_sample"
+    background_color: str = "last_sample"
     """Whether to randomize the background color."""
     hidden_dim: int = 64
     """Dimension of hidden layers"""
@@ -158,6 +158,8 @@ class NerfactoModelConfig(ModelConfig):
     """Whether to sample rays in perturbed unseen views (from train views)."""
     freeze_field: bool = False
     """Train pose only in order to optimize test view camera pose to match the given sample."""
+    original_image_num: int = -1
+    """During camera pose optimization, we need to know the number of images to train the original (loaded) model"""
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -191,6 +193,7 @@ class NerfactoModel(Model):
             use_pred_normals=self.config.predict_normals,
             use_average_appearance_embedding=self.config.use_average_appearance_embedding,
             sigma_perterb_std=self.config.sigma_perturb_std,
+            original_img_num=self.config.original_image_num
         )
 
         self.density_fns = []
@@ -266,6 +269,7 @@ class NerfactoModel(Model):
         self.iter_cnt = 0
 
         if self.config.freeze_field:
+            # This will cause problem
             self.requires_grad_(False)
             self.eval()
             self.field.eval()
@@ -273,7 +277,7 @@ class NerfactoModel(Model):
             self.proposal_sampler.eval()
             self.renderer_rgb.eval()
             # Camera optimizer is not here
-            input("Freeze all fields and stop training the network field.")
+            print("Freeze all fields and stop training the network field.")
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         param_groups = {}
@@ -313,6 +317,8 @@ class NerfactoModel(Model):
         return callbacks
 
     def get_outputs(self, ray_bundle: RayBundle):
+        if self.config.freeze_field:
+            self.eval()
         if self.iter_cnt == self.config.sigma_perturb_iter:
             self.field.set_sigma_std(0.0)
         self.iter_cnt += 1
@@ -355,6 +361,9 @@ class NerfactoModel(Model):
                 field_outputs[FieldHeadNames.PRED_NORMALS],
             )
         outputs["has_unseen_view"] = False
+        if self.config.freeze_field:
+            # Do not calculate other loss functions
+            return outputs
         # TODO: a new setting for this
         if self.training and self.config.use_entropy_loss:
             outputs["rendered_entropy_loss"] = entropy_loss(ray_samples.deltas, field_outputs[FieldHeadNames.DENSITY], self.config.entropy_threshold)
@@ -426,6 +435,9 @@ class NerfactoModel(Model):
                 train_view_mask = outputs['train_view_mask']
                 rgb = rgb[train_view_mask]
             loss_dict["rgb_loss"] = self.rgb_loss(image, rgb)
+        if self.config.freeze_field:
+            loss_dict["skip_optims"] = {"proposal_networks", "fields"}
+            return loss_dict
         if self.training:
             loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
                 outputs["weights_list"], outputs["ray_samples_list"]

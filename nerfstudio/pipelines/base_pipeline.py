@@ -25,13 +25,8 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 import torch
 import torch.distributed as dist
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-)
+from rich.progress import (BarColumn, MofNCompleteColumn, Progress, TextColumn,
+                           TimeElapsedColumn)
 from torch import nn
 from torch.nn import Parameter
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -39,12 +34,10 @@ from typing_extensions import Literal
 
 from nerfstudio.configs import base_config as cfg
 from nerfstudio.data.datamanagers.base_datamanager import (
-    DataManager,
-    DataManagerConfig,
-    VanillaDataManager,
-    VanillaDataManagerConfig,
-)
-from nerfstudio.engine.callbacks import TrainingCallback, TrainingCallbackAttributes
+    DataManager, DataManagerConfig, VanillaDataManager,
+    VanillaDataManagerConfig)
+from nerfstudio.engine.callbacks import (TrainingCallback,
+                                         TrainingCallbackAttributes)
 from nerfstudio.models.base_model import Model, ModelConfig
 from nerfstudio.utils import profiler
 

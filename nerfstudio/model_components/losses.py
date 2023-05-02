@@ -349,6 +349,7 @@ def depth_loss(
         return ds_nerf_depth_loss(weights, termination_depth, steps, lengths, sigma)
 
     if depth_loss_type == DepthLossType.URF:
+        predicted_depth = predicted_depth[:num_sample_ray, ...]
         return urban_radiance_field_depth_loss(weights, termination_depth, predicted_depth, steps, sigma)
 
     raise NotImplementedError("Provided depth loss type not implemented.")

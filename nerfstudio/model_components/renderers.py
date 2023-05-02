@@ -38,7 +38,8 @@ from typing_extensions import Literal
 
 from nerfstudio.cameras.rays import RaySamples
 from nerfstudio.utils import colors
-from nerfstudio.utils.math import components_from_spherical_harmonics, safe_normalize
+from nerfstudio.utils.math import (components_from_spherical_harmonics,
+                                   safe_normalize)
 
 BACKGROUND_COLOR_OVERRIDE: Optional[TensorType[3]] = None
 
@@ -104,8 +105,11 @@ class RGBRenderer(nn.Module):
             background_color = rgb[..., -1, :]
         if background_color == "random":
             background_color = torch.rand_like(comp_rgb).to(rgb.device)
-        if isinstance(background_color, str) and background_color in colors.COLORS_DICT:
-            background_color = colors.COLORS_DICT[background_color].to(rgb.device)
+        if isinstance(background_color, str):
+            if background_color.startswith("#"):
+                background_color = colors.get_hex_color(background_color).to(rgb.device)
+            elif background_color in colors.COLORS_DICT:
+                background_color = colors.COLORS_DICT[background_color].to(rgb.device)
 
         assert isinstance(background_color, torch.Tensor)
         comp_rgb = comp_rgb + background_color.to(weights.device) * (1.0 - accumulated_weight)

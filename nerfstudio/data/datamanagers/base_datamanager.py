@@ -383,6 +383,8 @@ class VanillaDataManagerConfig(DataManagerConfig):
     """Scale the intrinsic only. For datasets that contains scaled images but not the camera intrinsics"""
     test_view_sample_iter: int = -1
     """Whether to sample test views to remove floaters."""
+    transform_path: Optional[str] = None
+    """dataparser_transform.json to be loaded, if specified, auto pose orientation will be disabled."""
 
 
 class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
@@ -422,6 +424,8 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.test_mode = test_mode
         self.test_split = "test" if test_mode in ["test", "inference"] else "val"
         self.dataparser_config = self.config.dataparser
+        
+        self.config.dataparser.transform_path = self.config.transform_path
         if self.config.skip_eval:
             self.dataparser_config.train_split_fraction = 1.0
         if self.config.intrinsic_scale_factor is not None:

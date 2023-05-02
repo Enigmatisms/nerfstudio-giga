@@ -1,0 +1,23 @@
+ns-train depth-nerfacto \
+    --data ../dataset/images_and_cams/full/Library_opt/transforms_opt.json \
+    --load-dir ./outputs/Library/depth-nerfacto/2023-05-01_155111/nerfstudio_models/ \
+    --timestamp lib_opt \
+    --logging.local-writer.max-log-size 10 \
+    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.log2-hashmap-size 19 \
+    --pipeline.model.hidden-dim 64 \
+    --pipeline.model.num-levels 17 \
+    --pipeline.model.background-color last_sample \
+    --pipeline.model.original-image-num 53 \
+    --pipeline.datamanager.skip-eval True \
+    --pipeline.datamanager.intrinsic-scale-factor 0.125 \
+    --pipeline.datamanager.camera-optimizer.mode off \
+    --viewer.quit-on-train-completion True \
+    --pipeline.model.freeze-field True \
+    --optimizers.fields.optimizer.lr 0 \
+    --optimizers.proposal-networks.optimizer.lr 0 \
+    --pipeline.datamanager.camera-optimizer.mode SE3 \
+    --pipeline.datamanager.camera-optimizer.scheduler.lr-final 5e-5 \
+    --pipeline.datamanager.camera-optimizer.scheduler.max-steps 8000 \
+    --pipeline.datamanager.transform_path ./outputs/Library/depth-nerfacto/2023-05-01_064757/dataparser_transforms.json \
+    --max-num-iterations 10000

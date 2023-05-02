@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Optional, Type
@@ -65,6 +66,8 @@ class NerfstudioDataParserConfig(DataParserConfig):
     """Scales the depth values to meters. Default value is 0.001 for a millimeter to meter conversion."""
     intrinsic_scale_factor: Optional[float] = None
     """Scale the intrinsic only. For datasets that contains scaled images but not the camera intrinsics"""
+    transform_path: Optional[str] = None
+    """dataparser_transform.json to be loaded, if specified, auto pose orientation will be disabled."""
 
 @dataclass
 class Nerfstudio(DataParser):
@@ -236,18 +239,35 @@ class Nerfstudio(DataParser):
             orientation_method = self.config.orientation_method
 
         poses = torch.from_numpy(np.array(poses).astype(np.float32))
-        poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
-            poses,
-            method=orientation_method,
-            center_method=self.config.center_method,
-        )
-
-        # Scale poses
         scale_factor = 1.0
-        if self.config.auto_scale_poses:
-            scale_factor /= float(torch.max(torch.abs(poses[:, :3, 3])))
-        scale_factor *= self.config.scale_factor
-        poses[:, :3, 3] *= scale_factor
+        use_auto = (self.config.transform_path is None) or (not os.path.exists(self.config.transform_path))
+        if use_auto:
+            poses, transform_matrix = camera_utils.auto_orient_and_center_poses(
+                poses,
+                method=orientation_method,
+                center_method=self.config.center_method,
+            )
+
+            # Scale poses
+            if self.config.auto_scale_poses:
+                scale_factor /= float(torch.max(torch.abs(poses[:, :3, 3])))
+            scale_factor *= self.config.scale_factor
+            poses[:, :3, 3] *= scale_factor
+        else:
+            CONSOLE.log(f"[green] Using manual transformation. Skipping auto pose manipulation.")
+            transforms = load_from_json(Path(self.config.transform_path))
+            transform_matrix = torch.tensor(transforms["transform"], dtype = poses.dtype, device = poses.device)
+            if "applied_transform" in meta:
+                transform_matrix = torch.cat(
+                    [transform_matrix, torch.tensor([[0, 0, 0, 1]], dtype=transform_matrix.dtype)], 0
+                )
+                applied_transform = torch.tensor(meta["applied_transform"], dtype=transform_matrix.dtype)
+                applied_transform = torch.cat(
+                    [applied_transform, torch.tensor([[0, 0, 0, 1]], dtype=transform_matrix.dtype)], 0
+                )
+                # the saved transform has an <applied-transform> field
+                transform_matrix = transform_matrix @ torch.inverse(applied_transform)
+                transform_matrix = transform_matrix[:3, :]
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
         image_indices = indices if not test_views else indices[:len(image_filenames)]
@@ -332,6 +352,7 @@ class Nerfstudio(DataParser):
             metadata={
                 "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
                 "depth_unit_scale_factor": self.config.depth_unit_scale_factor,
+                "opt_no_depth": self.config.transform_path is not None
             },
             num_test_views=len(test_views)
         )

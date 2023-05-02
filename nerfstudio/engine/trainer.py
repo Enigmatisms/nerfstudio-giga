@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import json
 import os
 import time
 from dataclasses import dataclass, field
@@ -32,19 +33,14 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from typing_extensions import Literal
 
 from nerfstudio.configs.experiment_config import ExperimentConfig
-from nerfstudio.engine.callbacks import (
-    TrainingCallback,
-    TrainingCallbackAttributes,
-    TrainingCallbackLocation,
-)
+from nerfstudio.engine.callbacks import (TrainingCallback,
+                                         TrainingCallbackAttributes,
+                                         TrainingCallbackLocation)
 from nerfstudio.engine.optimizers import Optimizers
 from nerfstudio.pipelines.base_pipeline import VanillaPipeline
 from nerfstudio.utils import profiler, writer
-from nerfstudio.utils.decorators import (
-    check_eval_enabled,
-    check_main_thread,
-    check_viewer_enabled,
-)
+from nerfstudio.utils.decorators import (check_eval_enabled, check_main_thread,
+                                         check_viewer_enabled)
 from nerfstudio.utils.misc import step_check
 from nerfstudio.utils.writer import EventName, TimeWriter
 from nerfstudio.viewer.server.viewer_state import ViewerState
@@ -278,6 +274,23 @@ class Trainer:
 
         CONSOLE.rule()
         CONSOLE.print("[bold green]:tada: :tada: :tada: Training Finished :tada: :tada: :tada:", justify="center")
+        if hasattr(self.pipeline.config.model, "freeze_field"):
+            camera_poses = self.pipeline.datamanager.train_ray_generator.export_camera_poses()
+            camera_poses = camera_poses.detach().cpu().numpy()
+            CONSOLE.print(f"[blue]Camera optimization completed, outputing shape: {camera_poses.shape}")
+            path = self.base_dir / "optimized_poses.json"
+            output_json = {"frames": []}
+            for i, pose in enumerate(camera_poses):
+                output_list = pose.reshape(-1).tolist()
+                output_list.extend([0., 0., 0., 1.])
+                output_json["frames"].append({
+                    "camera_to_world": output_list,
+                    "frame_name": f"frame_{i+1:05d}.jpg"
+                })
+            with open(path, 'w', encoding = 'utf-8') as file:
+                json.dump(output_json, file, indent = 4)
+            # TODO: can we match the output?
+        
         if not self.config.viewer.quit_on_train_completion:
             CONSOLE.print("Use ctrl+c to quit", justify="center")
             while True:
@@ -403,13 +416,17 @@ class Trainer:
 
         with torch.autocast(device_type=cpu_or_cuda_str, enabled=self.mixed_precision):
             _, loss_dict, metrics_dict = self.pipeline.get_train_loss_dict(step=step)
+            skip_optims = loss_dict.get("skip_optims", None)
+            loss_dict.pop("skip_optims", None)      # remove `skip_optims` key if it exists, since it can not be used in `reduce`
             loss = functools.reduce(torch.add, loss_dict.values())
+
             if loss.isnan():
                 for key, val in loss_dict.items():
                     print(f"{key} = {val}")
                 # input("Press any key to continue")
+        
         self.grad_scaler.scale(loss).backward()  # type: ignore
-        self.optimizers.optimizer_scaler_step_all(self.grad_scaler)
+        self.optimizers.optimizer_scaler_step_all(self.grad_scaler, skip_optims)
 
         if self.config.log_gradients:
             total_grad = 0
