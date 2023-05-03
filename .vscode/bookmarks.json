@@ -4,22 +4,27 @@
 			"path": "nerfstudio/data/datamanagers/base_datamanager.py",
 			"bookmarks": [
 				{
-					"line": 436,
+					"line": 440,
 					"column": 54,
 					"label": "Datamanager all in once: create train set and call next_train"
 				},
 				{
-					"line": 500,
+					"line": 493,
+					"column": 45,
+					"label": "Cached dataloader"
+				},
+				{
+					"line": 504,
 					"column": 73,
 					"label": "Camera optimizer is setup here."
 				},
 				{
-					"line": 558,
+					"line": 562,
 					"column": 12,
 					"label": "Next train base implementation"
 				},
 				{
-					"line": 564,
+					"line": 568,
 					"column": 38,
 					"label": "Generate ray bundles and refine pose"
 				}
@@ -29,7 +34,7 @@
 			"path": "nerfstudio/model_components/ray_generators.py",
 			"bookmarks": [
 				{
-					"line": 56,
+					"line": 57,
 					"column": 44,
 					"label": "Ray generator"
 				}
@@ -39,7 +44,7 @@
 			"path": "nerfstudio/pipelines/base_pipeline.py",
 			"bookmarks": [
 				{
-					"line": 142,
+					"line": 135,
 					"column": 45,
 					"label": "Get metrics dict and pass batch in"
 				},
@@ -104,12 +109,12 @@
 			"path": "nerfstudio/data/datasets/depth_dataset.py",
 			"bookmarks": [
 				{
-					"line": 50,
+					"line": 58,
 					"column": 33,
 					"label": "Scaling factor"
 				},
 				{
-					"line": 51,
+					"line": 59,
 					"column": 47,
 					"label": "Depth dataset load depth image"
 				}
@@ -119,22 +124,22 @@
 			"path": "nerfstudio/data/dataparsers/nerfstudio_dataparser.py",
 			"bookmarks": [
 				{
-					"line": 38,
+					"line": 39,
 					"column": 9,
 					"label": "Max auto resolution"
 				},
 				{
-					"line": 61,
+					"line": 62,
 					"column": 11,
 					"label": "Train split fraction could be disabled"
 				},
 				{
-					"line": 114,
+					"line": 117,
 					"column": 34,
 					"label": "File path"
 				},
 				{
-					"line": 249,
+					"line": 254,
 					"column": 35,
 					"label": "Where the scaling factor comes from"
 				}
@@ -144,12 +149,12 @@
 			"path": "nerfstudio/models/nerfacto.py",
 			"bookmarks": [
 				{
-					"line": 256,
+					"line": 259,
 					"column": 56,
 					"label": "Metrics for nerfacto"
 				},
 				{
-					"line": 324,
+					"line": 330,
 					"column": 31,
 					"label": "Render RGB"
 				}
@@ -224,9 +229,44 @@
 			"path": "nerfstudio/fields/nerfacto_field.py",
 			"bookmarks": [
 				{
-					"line": 267,
+					"line": 122,
+					"column": 82,
+					"label": "Appearance embedding is image centric"
+				},
+				{
+					"line": 272,
 					"column": 28,
 					"label": "Appearance embedding and transient embedding calculation"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/cameras/cameras.py",
+			"bookmarks": [
+				{
+					"line": 694,
+					"column": 37,
+					"label": "Multiplied by optimized poses"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/model_components/renderers.py",
+			"bookmarks": [
+				{
+					"line": 107,
+					"column": 20,
+					"label": "RGB background setter"
+				}
+			]
+		},
+		{
+			"path": "nerfstudio/engine/trainer.py",
+			"bookmarks": [
+				{
+					"line": 276,
+					"column": 15,
+					"label": "Export camera poses"
 				}
 			]
 		}

@@ -1,10 +1,12 @@
 file_name="transforms${2}"
 folder_name="science${2}"
+full_res_name="ScienceSquare${2}"
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \
     --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
@@ -17,7 +19,7 @@ ns-train depth-nerfacto \
     --pipeline.model.use-entropy-loss True \
     --pipeline.model.entropy-threshold 0.01 \
     --pipeline.model.entropy-loss-mult 0.0005 \
-    --pipeline.model.use-occ-regularization True \
+    --pipeline.model.use-occ-regularization False \
     --pipeline.model.min-occ-threshold 0.1 \
     --pipeline.model.max-occ-threshold 0.2 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
@@ -34,18 +36,21 @@ ns-train depth-nerfacto \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.model.test-occ-loss-mult 0.05 \
     --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.1 \
-    --pipeline.datamanager.test-view-sample-iter 1000 \
+    --pipeline.model.test-far-plane 0.5 \
+    --pipeline.datamanager.test-view-sample-iter 3000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 25000
+    --vis viewer+tensorboard \
+    --max-num-iterations 12000
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \
     --load-dir ./outputs/ScienceSquare/depth-nerfacto/$folder_name/nerfstudio_models/ \
+    --timestamp $full_res_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-7 \
@@ -75,9 +80,9 @@ ns-train depth-nerfacto \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
-    --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
+    --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 64000
+    --max-num-iterations 32000

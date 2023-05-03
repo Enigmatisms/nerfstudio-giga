@@ -1,10 +1,12 @@
 file_name="transforms${2}"
 folder_name="library${2}"
+full_res_name="Library${2}_1"
 
 ns-train depth-nerfacto \
     --data ${1}/Library/$file_name.json \
     --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
@@ -17,9 +19,9 @@ ns-train depth-nerfacto \
     --pipeline.model.use-entropy-loss True \
     --pipeline.model.entropy-threshold 0.01 \
     --pipeline.model.entropy-loss-mult 0.001 \
-    --pipeline.model.use-occ-regularization False \
-    --pipeline.model.min-occ-threshold 0.1 \
-    --pipeline.model.max-occ-threshold 0.2 \
+    --pipeline.model.use-occ-regularization True \
+    --pipeline.model.min-occ-threshold 0.05 \
+    --pipeline.model.max-occ-threshold 0.1 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
     --pipeline.model.max-occ-loss_mult 0.0005 \
     --pipeline.model.occ-reg-iters 1000 \
@@ -40,12 +42,15 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 40000
+    --vis viewer+tensorboard \
+    --max-num-iterations 20000
 
 ns-train depth-nerfacto \
     --data ${1}/Library/$file_name.json \
     --load-dir ./outputs/Library/depth-nerfacto/$folder_name/nerfstudio_models/ \
+    --timestamp $full_res_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-6 \
@@ -76,6 +81,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
     --viewer.quit-on-train-completion True \
+    --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 2e-3 \
     --optimizers.proposal-networks.optimizer.lr 2e-3 \

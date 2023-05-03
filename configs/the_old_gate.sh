@@ -1,10 +1,12 @@
 file_name="transforms${2}"
 folder_name="old_gate${2}"
+full_res_name="theOldGate${2}"
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \
     --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
@@ -36,7 +38,7 @@ ns-train depth-nerfacto \
     --pipeline.model.test-occ-loss-mult 0.05 \
     --pipeline.model.test-near-plane 0.02 \
     --pipeline.model.test-far-plane 0.2 \
-    --pipeline.datamanager.test-view-sample-iter -2000 \
+    --pipeline.datamanager.test-view-sample-iter -1 \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --pipeline.datamanager.unseen-sample-iter 10000 \
@@ -44,12 +46,15 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.unseen-ratio 1.0 \
     --pipeline.datamanager.sample_unseen_view True \
     --viewer.quit-on-train-completion True \
-    --max-num-iterations 45000
+    --vis viewer+tensorboard \
+    --max-num-iterations 30000
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \
     --load-dir ./outputs/theOldGate/depth-nerfacto/$folder_name/nerfstudio_models/ \
+    --timestamp $full_res_name \
     --logging.local-writer.max-log-size 10 \
+    --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-4 \
@@ -79,9 +84,9 @@ ns-train depth-nerfacto \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
-    --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
+    --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 64000
+    --max-num-iterations 80000
