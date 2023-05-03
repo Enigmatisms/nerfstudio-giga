@@ -47,6 +47,11 @@
 					"line": 135,
 					"column": 45,
 					"label": "Get metrics dict and pass batch in"
+				},
+				{
+					"line": 381,
+					"column": 16,
+					"label": "Pipeline loader, pose_adjustment skipped"
 				}
 			]
 		},
