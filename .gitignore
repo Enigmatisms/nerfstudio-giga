@@ -167,6 +167,8 @@ outputs/*
 !outputs/copier.sh
 exports/
 renders/
+renders1/
+opt_sh/
 # tensorboard log files
 events.out.*
 

@@ -18,7 +18,7 @@ def parser_opts():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("-i", "--input_scene",      required = True, help = "Input scene", type = str)
-    parser.add_argument("-m", "--mode",             required = True, default = "new", choices = ["none", "new", "no_skew"], 
+    parser.add_argument("-m", "--mode",             required = True, default = "new", choices = ["none", "new", "no_skew", "colmap"], 
                         help = "Input modes to choose from.", type = str)
     parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/images_and_cams/full/", 
                         help = "Input pose and camera intrinsics file.", type = str)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     img_path = os.path.join(opts.input_img_path, opts.input_scene)
     image_infos = get_images(img_path, opts)
 
-    mode_mapping = {"none": "", "new": "_new", "no_skew": "_no_skew"}
+    mode_mapping = {"none": "", "new": "_new", "no_skew": "_no_skew", "colmap": "_colmap"}
     test_json = os.path.join(opts.input_pose_path, opts.input_scene, f"output{mode_mapping[opts.mode]}.json")
     with open(test_json, "r") as file:
         test_data = json.load(file)
