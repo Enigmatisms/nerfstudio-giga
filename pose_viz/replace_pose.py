@@ -14,7 +14,7 @@ def parser_opts():
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("-s", "--input_scene",      required = True, help = "Input scene", type = str)
     parser.add_argument("-n", "--input_name",       required = True, help = "Input name", type = str)
-    parser.add_argument("-m", "--mode",             required = True, choices = ["none", "new", "no_skew"], 
+    parser.add_argument("-m", "--mode",             required = True, choices = ["none", "colmap", "new", "no_skew"], 
                         help = "Input modes to choose from.", type = str)
     parser.add_argument("-i", "--input_path",       default = "../outputs/", help = "Input name", type = str)
     parser.add_argument("-o", "--output_json_path", default = "../../dataset/images_and_cams/full/", 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     opts = parser_opts()
     input_json_path = os.path.join(opts.input_path, opts.input_scene, "depth-nerfacto", opts.input_name, "optimized_poses.json")
     truncate_scene = opts.input_scene.split("_")[0]
-    mode_mapping = {"none": "", "new": "_new", "no_skew": "_no_skew"}
+    mode_mapping = {"none": "", "new": "_new", "no_skew": "_no_skew", "colmap": "_colmap"}
     overwrite_path  = os.path.join(opts.output_json_path, truncate_scene) 
     origin_json_path = os.path.join(overwrite_path, f"output{mode_mapping[opts.mode]}.json")
     output_json_path = os.path.join(overwrite_path, f"output{mode_mapping[opts.mode]}_opt.json")
