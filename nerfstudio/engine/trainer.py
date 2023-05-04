@@ -191,7 +191,11 @@ class Trainer:
         optimizer_config = self.config.optimizers.copy()
         param_groups = self.pipeline.get_param_groups()
         camera_optimizer_config = self.config.pipeline.datamanager.camera_optimizer
-        if camera_optimizer_config is not None and camera_optimizer_config.mode != "off":
+        if camera_optimizer_config is not None and any(
+            [camera_optimizer_config.mode != "off", 
+             camera_optimizer_config.distortion_opt != "off",
+             camera_optimizer_config.intrinsic_opt != "off"]
+        ):
             assert camera_optimizer_config.param_group not in optimizer_config
             optimizer_config[camera_optimizer_config.param_group] = {
                 "optimizer": camera_optimizer_config.optimizer,

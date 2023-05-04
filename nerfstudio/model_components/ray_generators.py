@@ -57,12 +57,14 @@ class RayGenerator(nn.Module):
 
         # This is ray generator, for rays sampled from unseen poses, we need to skip pose refining
 
-        camera_opt_to_camera = self.pose_optimizer(c)
+        camera_opt_to_camera, distortion_params_delta, delta_intrinsics = self.pose_optimizer(c)
 
         ray_bundle = self.cameras.generate_rays(
             camera_indices=c.unsqueeze(-1),
             coords=coords,
             camera_opt_to_camera=camera_opt_to_camera,
+            distortion_params_delta=distortion_params_delta,
+            intrinsics_delta=delta_intrinsics
         )
         return ray_bundle
     
@@ -70,9 +72,9 @@ class RayGenerator(nn.Module):
         """Exporting camera poses, useful when test view camera pose optimization is done."""
         num_cams = self.cameras.camera_to_worlds.shape[0]
         device = self.cameras.camera_to_worlds.device
-        camera_opt_to_camera = self.pose_optimizer(torch.arange(num_cams, device = device))
+        camera_opt_to_camera, distortion, delta_intrinsics = self.pose_optimizer(torch.arange(num_cams, device = device))
         c2w = pose_utils.multiply(self.cameras.camera_to_worlds, camera_opt_to_camera)
-        return c2w
+        return c2w, distortion
 
 class PerturbRayGenerator(RayGenerator):
     """This ray generator aims to generate some rays from an unseen view
@@ -109,14 +111,16 @@ class PerturbRayGenerator(RayGenerator):
 
         # This is ray generator, for rays sampled from unseen poses, we need to skip pose refining
 
-        camera_opt_to_camera = self.pose_optimizer(c)
+        camera_opt_to_camera, distortion_params_delta, delta_intrinsics = self.pose_optimizer(c)
 
         # c shape (4096), coords shape (4096, 2), ray_indices (4096, 3), camera_opt_to_camera (4096, 3, 4)
         if random.random() > self.random_ratio or self.iter_cnt > self.max_perturb_iter:    # Fallback to RayGenerator
-            ray_bundle: RayBundle = self.cameras.generate_rays(
+            ray_bundle = self.cameras.generate_rays(
                 camera_indices=c.unsqueeze(-1),
                 coords=coords,
                 camera_opt_to_camera=camera_opt_to_camera,
+                distortion_params_delta=distortion_params_delta,
+                intrinsics_delta=delta_intrinsics
             )
             ray_bundle.has_unseen = False
         else:
@@ -136,10 +140,19 @@ class PerturbRayGenerator(RayGenerator):
             half_c = half_c[None, ...].expand(2, -1).reshape(-1, 1)                   # duplicate the camera indices
             half_coords = half_coords[None, ...].expand(2, -1, -1).reshape(-1, 2)     # duplicate the image coordinates
 
+            # FIXME: this might lead to erroreous results (exception)
+            half_dists  = distortion_params_delta[:half_num]
+            half_dists  = half_dists[None, ...].expand(2, -1, -1).reshape(-1, 6)
+
+            half_intrs  = delta_intrinsics[:half_num]
+            half_intrs  = half_intrs[None, ...].expand(2, -1, -1).reshape(-1, 2)
+
             ray_bundle: RayBundle = self.cameras.generate_rays(
                 camera_indices=half_c,
                 coords=half_coords,
                 camera_opt_to_camera=half_exts,
+                distortion_params_delta=half_dists,
+                intrinsics_delta=half_intrs,
             )
             ray_bundle.has_unseen = True
 

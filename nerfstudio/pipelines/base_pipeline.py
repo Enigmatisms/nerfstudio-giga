@@ -379,6 +379,7 @@ class VanillaPipeline(Pipeline):
         state = {
             (key[len("module.") :] if key.startswith("module.") else key): value for key, value in loaded_state.items()
         }
+        
         if getattr(self.config.model, "freeze_field", False):
             # Camera optimization can not load model from the trained checkpoint file
             renewed_state = {}
@@ -388,6 +389,15 @@ class VanillaPipeline(Pipeline):
             state = renewed_state
         self.model.update_to_step(step)
         self.load_state_dict(state, strict=True)
+
+        # Qianyue He's note: during evaluation, the params of camera optimizers will not be loaded
+        for key, val in state.items():
+            if "distortion_adjustment" in key:
+                if not hasattr(self.datamanager, "train_camera_optimizer"):
+                    self.datamanager.__setattr__("distortion_params", val)
+            elif "intrinsic_adjustment" in key:
+                if not hasattr(self.datamanager, "train_camera_optimizer"):
+                    self.datamanager.__setattr__("intrinsic_params", val)
 
     def get_training_callbacks(
         self, training_callback_attributes: TrainingCallbackAttributes

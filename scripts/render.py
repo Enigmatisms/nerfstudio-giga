@@ -17,9 +17,13 @@ import mediapy as media
 import numpy as np
 import torch
 import tyro
+from rich import box, style
 from rich.console import Console
+from rich.panel import Panel
 from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
                            TimeRemainingColumn)
+from rich.table import Table
+from scipy.spatial.transform import Rotation
 from torchtyping import TensorType
 from typing_extensions import Literal, assert_never
 
@@ -36,6 +40,25 @@ from nerfstudio.utils.rich_utils import ItersPerSecColumn
 
 CONSOLE = Console(width=120)
 
+def camera_distance(pose, ref):
+    rot = Rotation.from_matrix(pose[:3, :3].T @ ref[:3, :3]).magnitude()
+    trans = np.linalg.norm(pose[:3, 3] - ref[:3, 3])
+    return rot + trans * 0.2
+
+def get_nearest_camera(train_poses: TensorType["num_cameras":..., 3, 4], pose: TensorType[3, 4]) -> int:
+    # FIXME: this computation could be faster
+    train_poses = train_poses.reshape(-1, 3, 4).cpu().numpy()
+    if pose.device != 'cpu':
+        pose = pose.cpu()
+    pose = pose.numpy()
+    idx = 0
+    min_dist = camera_distance(pose, train_poses[0])
+    for i in range(1, train_poses.shape[0]):
+        dist = camera_distance(pose, train_poses[i])
+        if dist < min_dist:
+            idx = i
+            min_dist = dist
+    return idx
 
 def _render_trajectory_video(
     pipeline: Pipeline,
@@ -104,8 +127,18 @@ def _render_trajectory_video(
                     bounding_box_min = crop_data.center - crop_data.scale / 2.0
                     bounding_box_max = crop_data.center + crop_data.scale / 2.0
                     aabb_box = SceneBox(torch.stack([bounding_box_min, bounding_box_max]).to(pipeline.device))
+
+                # FIXME: pass in distortion params, format is still unknown
+                # FIXME: we can make use of numpy tensor to accelerate this computation
                 camera_ray_bundle = cameras.generate_rays(camera_indices=camera_idx, aabb_box=aabb_box)
 
+                # FIXME: for peony garden, :42 will produce correct result. But test view merge problem (more images than needed) should be fixed
+                nearest_id = get_nearest_camera(
+                    pipeline.datamanager.train_dataparser_outputs.cameras.camera_to_worlds[:42],
+                    cameras.camera_to_worlds[camera_idx],
+                )
+                camera_ray_bundle.camera_indices = torch.full_like(camera_ray_bundle.camera_indices, nearest_id, 
+                                                device = camera_ray_bundle.camera_indices.device)
                 if crop_data is not None:
                     with renderers.background_color_override_context(
                         crop_data.background_color.to(pipeline.device)
@@ -149,9 +182,19 @@ def _render_trajectory_video(
                         )
                     writer.add_image(render_image)
 
+    table = Table(
+        title=None,
+        show_header=False,
+        box=box.MINIMAL,
+        title_style=style.Style(bold=True),
+    )
     if output_format == "video":
         if camera_type == CameraType.EQUIRECTANGULAR:
             insert_spherical_metadata_into_file(output_filename)
+        table.add_row("Video", str(output_filename))
+    else:
+        table.add_row("Images", str(output_image_dir))
+    CONSOLE.print(Panel(table, title="[bold][green]:tada: Render Complete :tada:[/bold]", expand=False))
 
 
 def insert_spherical_metadata_into_file(
@@ -255,6 +298,10 @@ def get_crop_from_json(camera_json: Dict[str, Any]) -> Optional[CropData]:
         scale=torch.Tensor(camera_json["crop"]["crop_scale"]),
     )
 
+def populate_delta_field(input_dict: Dict[str, Any], pipeline) -> Dict[str, Any]:
+    pipeline.model
+    pass
+
 
 @dataclass
 class RenderTrajectory:
@@ -294,11 +341,15 @@ class RenderTrajectory:
             eval_num_rays_per_chunk=self.eval_num_rays_per_chunk,
             test_mode="test" if self.traj in ["spiral", "interpolate"] else "inference",
         )
-
+        
         install_checks.check_ffmpeg_installed()
 
         seconds = self.seconds
         crop_data = None
+
+        # TODO: the way to extract distortion is here
+        # print(pipeline.datamanager.distortion_params)
+        # input("Continue")
 
         # TODO(ethan): use camera information from parsing args
         camera_file = None
@@ -319,8 +370,10 @@ class RenderTrajectory:
                 camera_type = CameraType.EQUIRECTANGULAR
             else:
                 camera_type = CameraType.PERSPECTIVE
+
             crop_data = get_crop_from_json(camera_file)
             camera_path = get_path_from_json(camera_file)
+            # FIXME: load extra camera information (optimized) here
         elif self.traj == "interpolate":
             camera_type = CameraType.PERSPECTIVE
             camera_path = get_interpolated_camera_path(

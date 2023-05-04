@@ -317,6 +317,7 @@ class Cameras(TensorDataclass):
         coords: Optional[TensorType["num_rays":..., 2]] = None,
         camera_opt_to_camera: Optional[TensorType["num_rays":..., 3, 4]] = None,
         distortion_params_delta: Optional[TensorType["num_rays":..., 6]] = None,
+        intrinsics_delta: Optional[TensorType["num_rays":..., 2]] = None,
         keep_shape: Optional[bool] = None,
         disable_distortion: bool = False,
         aabb_box: Optional[SceneBox] = None,
@@ -329,6 +330,7 @@ class Cameras(TensorDataclass):
             - coords: (num_rays:..., 2)
             - camera_opt_to_camera: (num_rays:..., 3, 4) or None
             - distortion_params_delta: (num_rays:..., 6) or None
+            - intrinsics_delta: (num_rays:..., 2) or None
 
         Read the docstring for _generate_rays_from_coords for more information on how we generate the rays
         after we have standardized the arguments.
@@ -358,6 +360,7 @@ class Cameras(TensorDataclass):
             coords: Coordinates of the pixels to generate rays for. If None, the full image will be rendered.
             camera_opt_to_camera: Optional transform for the camera to world matrices.
             distortion_params_delta: Optional delta for the distortion parameters.
+            intrinsics_delta: Optional delta for the camera intrinsics.
             keep_shape: If None, then we default to the regular behavior of flattening if cameras is jagged, otherwise
                 keeping dimensions. If False, we flatten at the end. If True, then we keep the shape of the
                 camera_indices and coords tensors (if we can).
@@ -372,12 +375,14 @@ class Cameras(TensorDataclass):
         assert coords is None or isinstance(coords, torch.Tensor), "coords must be a tensor or None"
         assert camera_opt_to_camera is None or isinstance(camera_opt_to_camera, torch.Tensor)
         assert distortion_params_delta is None or isinstance(distortion_params_delta, torch.Tensor)
+        assert intrinsics_delta is None or isinstance(intrinsics_delta, torch.Tensor)
         if isinstance(camera_indices, torch.Tensor) and isinstance(coords, torch.Tensor):
             num_rays_shape = camera_indices.shape[:-1]
             errormsg = "Batch dims of inputs must match when inputs are all tensors"
             assert coords.shape[:-1] == num_rays_shape, errormsg
             assert camera_opt_to_camera is None or camera_opt_to_camera.shape[:-2] == num_rays_shape, errormsg
             assert distortion_params_delta is None or distortion_params_delta.shape[:-1] == num_rays_shape, errormsg
+            assert intrinsics_delta is None or intrinsics_delta.shape[:-1] == num_rays_shape, errormsg
 
         # If zero dimensional, we need to unsqueeze to get a batch dimension and then squeeze later
         if not self.shape:
@@ -441,6 +446,11 @@ class Cameras(TensorDataclass):
                 if distortion_params_delta is not None
                 else None
             )
+            intrinsics_delta = (
+                intrinsics_delta.broadcast_to(coords.shape[:-1] + (2,))
+                if intrinsics_delta is not None
+                else None
+            )
 
         # If camera indices was an int or coords was none, we need to broadcast our indices along batch dims
         camera_indices = camera_indices.broadcast_to(coords.shape[:-1] + (len(cameras.shape),)).to(torch.long)
@@ -450,12 +460,15 @@ class Cameras(TensorDataclass):
         assert camera_indices.shape[-1] == len(cameras.shape)
         assert camera_opt_to_camera is None or camera_opt_to_camera.shape[:-2] == coords.shape[:-1]
         assert distortion_params_delta is None or distortion_params_delta.shape[:-1] == coords.shape[:-1]
+        assert intrinsics_delta is None or intrinsics_delta.shape[:-1] == coords.shape[:-1]
 
         # This will do the actual work of generating the rays now that we have standardized the inputs
         # raybundle.shape == (num_rays) when done
         # pylint: disable=protected-access
         raybundle = cameras._generate_rays_from_coords(
-            camera_indices, coords, camera_opt_to_camera, distortion_params_delta, disable_distortion=disable_distortion
+            camera_indices, coords, camera_opt_to_camera, distortion_params_delta, 
+            intrinsics_delta=intrinsics_delta,
+            disable_distortion=disable_distortion
         )
 
         # If we have mandated that we don't keep the shape, then we flatten
@@ -495,6 +508,7 @@ class Cameras(TensorDataclass):
         coords: TensorType["num_rays":..., 2],
         camera_opt_to_camera: Optional[TensorType["num_rays":..., 3, 4]] = None,
         distortion_params_delta: Optional[TensorType["num_rays":..., 6]] = None,
+        intrinsics_delta: Optional[TensorType["num_rays":..., 2]] = None,
         disable_distortion: bool = False,
     ) -> RayBundle:
         """Generates rays for the given camera indices and coords where self isn't jagged
@@ -561,6 +575,8 @@ class Cameras(TensorDataclass):
                 In terms of shape, it follows the same rules as coords, but indexing into it with [i:...] gets you
                 the 1D tensor with the 6 distortion parameters for the camera optimization at RayBundle[i:...].
 
+            intrinsics_delta: Optional delta for the camera intrinsics.
+
             disable_distortion: If True, disables distortion.
 
         Returns:
@@ -577,6 +593,7 @@ class Cameras(TensorDataclass):
         assert coords.shape[-1] == 2
         assert camera_opt_to_camera is None or camera_opt_to_camera.shape == num_rays_shape + (3, 4)
         assert distortion_params_delta is None or distortion_params_delta.shape == num_rays_shape + (6,)
+        assert intrinsics_delta is None or intrinsics_delta.shape == num_rays_shape + (2,)
 
         # Here, we've broken our indices down along the num_cameras_batch_dims dimension allowing us to index by all
         # of our output rays at each dimension of our cameras object
@@ -603,7 +620,9 @@ class Cameras(TensorDataclass):
             + str(cx.shape)
             + str(cy.shape)
         )
-
+        if intrinsics_delta is not None:
+            fx = (fx + intrinsics_delta[:, 0]).clamp_min(1e-5)
+            fy = (fy + intrinsics_delta[:, 1]).clamp_min(1e-5)
         # Get our image coordinates and image coordinates offset by 1 (offsets used for dx, dy calculations)
         # Also make sure the shapes are correct
         coord = torch.stack([(x - cx) / fx, -(y - cy) / fy], -1)  # (num_rays, 2)
@@ -629,16 +648,22 @@ class Cameras(TensorDataclass):
             elif distortion_params_delta is not None:
                 distortion_params = distortion_params_delta
 
+            # torch.Size([3, 797, 1196, 2]) torch.Size([797, 1196, 6]) 1 torch.Size([11, 6])
+            # [3, 953212] [3, 953212] [797, 1196] [797, 1196] [797, 1196] [797, 1196]
             # Do not apply distortion for equirectangular images
             if distortion_params is not None:
-                mask = (self.camera_type[true_indices] != CameraType.EQUIRECTANGULAR.value).squeeze(-1)  # (num_rays)
-                coord_mask = torch.stack([mask, mask, mask], dim=0)
-                if mask.any():
-                    coord_stack[coord_mask, :] = camera_utils.radial_and_tangential_undistort(
-                        coord_stack[coord_mask, :].reshape(3, -1, 2),
-                        distortion_params[mask, :],
-                    ).reshape(-1, 2)
-
+                # FIXME: for other camera types, distortion and intrinsic optimization is not implemented
+                # mask = (self.camera_type[true_indices] != CameraType.EQUIRECTANGULAR.value).squeeze(-1)  # (num_rays)
+                # coord_mask = torch.stack([mask, mask, mask], dim=0)
+                # if mask.any() and (distortion_params != 0).any():
+                #     coord_stack[coord_mask, :] = camera_utils.radial_and_tangential_undistort(
+                #         coord_stack[coord_mask, :].reshape(3, -1, 2),
+                #         distortion_params[mask, :],
+                #     ).reshape(-1, 2)
+                coord_stack = camera_utils.radial_and_tangential_undistort(
+                    coord_stack.reshape(3, -1, 2),
+                    distortion_params.reshape(-1, 6),
+                ).reshape(3, *num_rays_shape, 2)
         # Make sure after we have undistorted our images, the shapes are still correct
         assert coord_stack.shape == (3,) + num_rays_shape + (2,)
 
