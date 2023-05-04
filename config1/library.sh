@@ -1,5 +1,5 @@
 file_name="transforms${2}"
-folder_name="library${2}"
+folder_name="library${2}_1"
 full_res_name="Library${2}_1"
 
 ns-train depth-nerfacto \

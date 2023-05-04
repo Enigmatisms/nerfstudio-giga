@@ -1,5 +1,5 @@
 file_name="transforms${2}"
-folder_name="daya${2}"
+folder_name="daya${2}_1"
 full_res_name="DayaTemple${2}_1"
 
 ns-train depth-nerfacto \
@@ -42,7 +42,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 20000
+    --max-num-iterations 40000
 
 ns-train depth-nerfacto \
     --data ${1}/DayaTemple/$file_name.json \

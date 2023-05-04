@@ -1,5 +1,5 @@
 file_name="transforms${2}"
-folder_name="science${2}"
+folder_name="science${2}_1"
 full_res_name="ScienceSquare${2}_1"
 
 ns-train depth-nerfacto \
@@ -85,4 +85,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 32000
+    --max-num-iterations 60000

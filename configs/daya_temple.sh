@@ -9,6 +9,7 @@ ns-train depth-nerfacto \
     --pipeline.model.near-plane 0.1 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.distortion-loss-mult 0.002 \
     --pipeline.model.num-nerf-samples-per-ray 64 \
     --pipeline.model.orientation-loss-mult 0.0001 \
@@ -42,7 +43,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 20000
+    --max-num-iterations 50000
 
 ns-train depth-nerfacto \
     --data ${1}/DayaTemple/$file_name.json \
@@ -52,6 +53,7 @@ ns-train depth-nerfacto \
     --timestamp $full_res_name \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
+    --pipeline.model.num-levels 17 \
     --pipeline.model.distortion-loss-mult 1e-5 \
     --pipeline.model.num-nerf-samples-per-ray 64 \
     --pipeline.model.orientation-loss-mult 0.0001 \
@@ -83,4 +85,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 80000
+    --max-num-iterations 70000
