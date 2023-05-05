@@ -47,7 +47,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.sample_unseen_view True \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 30000
+    --max-num-iterations 40000
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \

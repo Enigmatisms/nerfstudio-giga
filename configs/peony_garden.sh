@@ -43,7 +43,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 20000
+    --max-num-iterations 40000
 
 ns-train depth-nerfacto \
     --data ${1}/PeonyGarden/$file_name.json \

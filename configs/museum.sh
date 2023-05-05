@@ -40,13 +40,13 @@ ns-train depth-nerfacto \
     --pipeline.model.test-occ-loss-mult 0.0001 \
     --pipeline.model.test-near-plane 0.02 \
     --pipeline.model.test-far-plane 0.3 \
-    --pipeline.datamanager.test-view-sample-iter 30000 \
+    --pipeline.datamanager.test-view-sample-iter 38000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 30000
+    --max-num-iterations 40000
 
 ns-train depth-nerfacto \
     --data ${1}/Museum/$file_name.json \
@@ -84,7 +84,7 @@ ns-train depth-nerfacto \
     --pipeline.model.test-occ-loss-mult 0.0001 \
     --pipeline.model.test-near-plane 0.02 \
     --pipeline.model.test-far-plane 0.3 \
-    --pipeline.datamanager.test-view-sample-iter 90000 \
+    --pipeline.datamanager.test-view-sample-iter 92000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
     --viewer.quit-on-train-completion True \

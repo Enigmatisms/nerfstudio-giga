@@ -85,4 +85,4 @@ ns-train depth-nerfacto \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 60000
+    --max-num-iterations 70000
