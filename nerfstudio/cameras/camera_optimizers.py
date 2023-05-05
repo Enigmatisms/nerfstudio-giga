@@ -93,6 +93,10 @@ class CameraOptimizer(nn.Module):
         else:
             assert_never(self.config.mode)
 
+        if self.config.intrinsic_opt != "off" or self.config.distortion_opt != "off":
+            # Keep the state dict the same
+            self.pose_adjustment = torch.nn.Parameter(torch.zeros((num_cameras, 6), device=device))
+
         if self.config.distortion_opt == "full":
             self.distortion_adjustment = torch.nn.Parameter(torch.zeros((num_cameras, 6), device=device))
         elif self.config.distortion_opt == "fixed":
@@ -110,6 +114,8 @@ class CameraOptimizer(nn.Module):
             self.intrinsic_adjustment = None
         else:
             assert_never(self.config.intrinsic_opt)
+
+        
 
         # Initialize pose noise; useful for debugging.
         if config.position_noise_std != 0.0 or config.orientation_noise_std != 0.0:
