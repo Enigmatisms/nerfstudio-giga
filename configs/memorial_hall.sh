@@ -19,12 +19,12 @@ ns-train depth-nerfacto \
     --pipeline.model.use-entropy-loss True \
     --pipeline.model.entropy-threshold 0.01 \
     --pipeline.model.entropy-loss-mult 0.001 \
-    --pipeline.model.use-occ-regularization False \
+    --pipeline.model.use-occ-regularization True \
     --pipeline.model.min-occ-threshold 0.1 \
     --pipeline.model.max-occ-threshold 0.2 \
     --pipeline.model.min-occ-loss_mult 0.0001 \
     --pipeline.model.max-occ-loss_mult 0.0005 \
-    --pipeline.model.occ-reg-iters 1000 \
+    --pipeline.model.occ-reg-iters 2000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
     --pipeline.model.min-depth-loss-mult 1e-3 \
@@ -43,7 +43,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 20000
+    --max-num-iterations 40000
 
 ns-train depth-nerfacto \
     --data ${1}/MemorialHall/$file_name.json \
