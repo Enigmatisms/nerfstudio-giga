@@ -73,8 +73,12 @@ class RayGenerator(nn.Module):
         num_cams = self.cameras.camera_to_worlds.shape[0]
         device = self.cameras.camera_to_worlds.device
         camera_opt_to_camera, distortion, delta_intrinsics = self.pose_optimizer(torch.arange(num_cams, device = device))
+        distortion = self.cameras.distortion_params + distortion
+        fx = self.cameras.fx + delta_intrinsics[:, 0]
+        fy = self.cameras.fy + delta_intrinsics[:, 1]
         c2w = pose_utils.multiply(self.cameras.camera_to_worlds, camera_opt_to_camera)
-        return c2w, distortion
+        extras = {"distortion": distortion, "fx": fx, "fy": fy}
+        return c2w, extras
 
 class PerturbRayGenerator(RayGenerator):
     """This ray generator aims to generate some rays from an unseen view
