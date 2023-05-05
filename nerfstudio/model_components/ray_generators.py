@@ -74,8 +74,8 @@ class RayGenerator(nn.Module):
         device = self.cameras.camera_to_worlds.device
         camera_opt_to_camera, distortion, delta_intrinsics = self.pose_optimizer(torch.arange(num_cams, device = device))
         distortion = self.cameras.distortion_params + distortion
-        fx = self.cameras.fx + delta_intrinsics[:, 0]
-        fy = self.cameras.fy + delta_intrinsics[:, 1]
+        fx = self.cameras.fx + delta_intrinsics[:, 0:1]
+        fy = self.cameras.fy + delta_intrinsics[:, 1:2]
         c2w = pose_utils.multiply(self.cameras.camera_to_worlds, camera_opt_to_camera)
         extras = {"distortion": distortion, "fx": fx, "fy": fy}
         return c2w, extras

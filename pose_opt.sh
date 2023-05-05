@@ -14,7 +14,7 @@ folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarde
 image_nums=(83 25 53 17 54 42 32 47)
 levels=(16 17 17 17 17 17 17 17)
 
-opt_ids=(0 1)
+opt_ids=(1 2 3 4 5 6 7)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     image_num=${image_nums[$idx]}
@@ -40,6 +40,8 @@ for idx in ${opt_ids[@]}; do
         --optimizers.fields.optimizer.lr 0 \
         --optimizers.proposal-networks.optimizer.lr 0 \
         --pipeline.datamanager.camera-optimizer.mode SE3 \
+        --pipeline.datamanager.camera-optimizer.intrinsic-opt full \
+        --pipeline.datamanager.camera-optimizer.distortion-opt full \
         --pipeline.datamanager.camera-optimizer.scheduler.lr-final 5e-5 \
         --pipeline.datamanager.camera-optimizer.scheduler.max-steps 8000 \
         --pipeline.datamanager.transform_path ./outputs/$folder/depth-nerfacto/${folder}${1}${2}/dataparser_transforms.json \
