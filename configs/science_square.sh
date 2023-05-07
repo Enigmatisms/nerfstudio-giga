@@ -1,16 +1,17 @@
 file_name="transforms${2}"
 folder_name="science${2}"
-full_res_name="ScienceSquare${2}"
+full_res_name="ScienceSquare${2}_high"
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \
     --timestamp $folder_name \
     --logging.local-writer.max-log-size 10 \
-    --pipeline.model.near-plane 0.1 \
+    --pipeline.model.near-plane 0.0 \
+    --pipeline.model.far-plane 80 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-nerf-samples-per-ray 96 \
     --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
@@ -27,34 +28,35 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 2000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 2e-3 \
-    --pipeline.model.max-depth-loss-mult 2e-3 \
+    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.max-depth-loss-mult 1e-3 \
     --pipeline.model.depth-loss-iter 100000 \
-    --pipeline.model.depth-sigma 0.01 \
+    --pipeline.model.depth-sigma 0.02 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
-    --pipeline.model.test-occ-loss-mult 0.05 \
+    --pipeline.model.test-occ-loss-mult 1e-5 \
     --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.5 \
-    --pipeline.datamanager.test-view-sample-iter 3000 \
+    --pipeline.model.test-far-plane 0.2 \
+    --pipeline.datamanager.test-view-sample-iter 13000 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 12000
+    --max-num-iterations 13000
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \
     --load-dir ./outputs/ScienceSquare/depth-nerfacto/$folder_name/nerfstudio_models/ \
     --timestamp $full_res_name \
     --logging.local-writer.max-log-size 10 \
-    --pipeline.model.near-plane 0.1 \
+    --pipeline.model.near-plane 0.0 \
+    --pipeline.model.far-plane 80 \
     --pipeline.model.log2-hashmap-size 19 \
     --pipeline.model.hidden-dim 64 \
     --pipeline.model.distortion-loss-mult 1e-7 \
-    --pipeline.model.num-nerf-samples-per-ray 64 \
+    --pipeline.model.num-nerf-samples-per-ray 96 \
     --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
@@ -71,18 +73,22 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 3e-3 \
-    --pipeline.model.max-depth-loss-mult 3e-3 \
+    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.max-depth-loss-mult 1e-3 \
     --pipeline.model.depth-loss-iter 100000 \
-    --pipeline.model.depth-sigma 0.01 \
+    --pipeline.model.depth-sigma 0.02 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
+    --pipeline.model.test-occ-loss-mult 1e-5 \
+    --pipeline.model.test-near-plane 0.02 \
+    --pipeline.model.test-far-plane 0.2 \
+    --pipeline.datamanager.test-view-sample-iter 110000 \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 70000
+    --max-num-iterations 120000

@@ -437,7 +437,6 @@ class LocalWriter:
                     if "Dict" in name:
                         if "Loss" in name:
                             mssg += f"{'RGB Loss':<20} "
-                            mssg += f"{'Occulusion Loss':<20} "
                             mssg += f"{'Entropy Loss':<20} "
                         else:
                             mssg += f"{'Depth Loss':<20} "
@@ -480,11 +479,6 @@ class LocalWriter:
                     else:
                         if 'rgb_loss' in v:
                             dis_loss = f"{v['rgb_loss'].item():0.6f}"
-                            curr_mssg += f"{dis_loss:<20} "
-                        else:
-                            curr_mssg += f"{'Null':<20} "
-                        if 'occlusion_loss_nw' in v:
-                            dis_loss = f"{v['occlusion_loss_nw'].item():0.6f}"
                             curr_mssg += f"{dis_loss:<20} "
                         else:
                             curr_mssg += f"{'Null':<20} "

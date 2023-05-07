@@ -180,6 +180,23 @@ def occlusion_regularization(deltas: TensorType, densities: TensorType, threshol
     to_reg = densities[ratios < threshold] 
     return to_reg
 
+def ds_occlusion_loss(
+    density: TensorType[..., "num_samples", 1],
+    ray_samples: RaySamples,
+    termination_depth: TensorType[..., 1],
+    sigma: TensorType[0],
+):
+    """Occlusion loss with depth supervision"""
+    num_sample_ray = termination_depth.shape[0]
+    steps = ray_samples.frustums.ends[:num_sample_ray, ...]
+    density = density[:num_sample_ray, ...]
+    depth_mask = termination_depth > 0
+    to_mask = (steps < (termination_depth[..., None] - sigma))
+    result = depth_mask * (to_mask * torch.relu(density)).sum(-2)
+    if result.numel():
+        return result.sum()
+    return 0.
+
 def nerfstudio_distortion_loss(
     ray_samples: RaySamples,
     densities: TensorType["bs":..., "num_samples", 1] = None,
@@ -269,7 +286,6 @@ def ds_nerf_depth_loss(
     loss = -torch.log(weights + EPS) * torch.exp(-((steps - termination_depth[:, None]) ** 2) / (2 * sigma)) * lengths
     loss = loss.sum(-2) * depth_mask
     return torch.mean(loss)
-
 
 def urban_radiance_field_depth_loss(
     weights: TensorType[..., "num_samples", 1],

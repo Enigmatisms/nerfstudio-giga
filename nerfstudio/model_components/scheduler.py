@@ -31,6 +31,7 @@ class SimpleScheduler:
         self.it      = 0
         self.mode    = mode
         self.hold_expired = hold_expired
+        self.now     = 0
         if mode == 'arctan':
             ratio = self.end_v / self.start_v - 1
             self.alpha = np.tan(np.pi / 2. * (ratio)) / self.iter
@@ -42,9 +43,14 @@ class SimpleScheduler:
         mult = self.alpha * self.it
         self.it += 1
         if self.mode == 'arctan':
-            return max(2. / np.pi * np.arctan(self.alpha * self.it) + 1, self.end_v / self.start_v) * self.start_v
+            self.now = max(2. / np.pi * np.arctan(self.alpha * self.it) + 1, self.end_v / self.start_v) * self.start_v
+            return self.now
         else:
-            return max(self.start_v + mult, self.end_v)
+            self.now = max(self.start_v + mult, self.end_v)
+            return self.now
+        
+    def get(self):
+        return self.now
 
     def valid_update(self):
         """Whether the current state is valid"""

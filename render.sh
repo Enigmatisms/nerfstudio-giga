@@ -10,7 +10,7 @@ fi
 length=${#folders[@]}
 for ((i=0;i<$length;i++)); do
     folder=${folders[$i]}
-    model_folder=${folders[$i]}${1}_1
+    model_folder=${folders[$i]}${1}_high
 
     folder_name=./outputs/$folder/depth-nerfacto/$model_folder/
     echo "Rendering $folder_name"

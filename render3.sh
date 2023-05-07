@@ -1,4 +1,4 @@
-folders=("PeonyGarden" "DayaTemple" "ScienceSquare") #"Library"
+folders=("PeonyGarden" "ScienceSquare") #"Library"
 # model_name=("theOldGate") #"2023-05-03_164124") # "2023-05-03_042830" "2023-05-03_085003")
 
 if [ ""$1 = "" ]; then
@@ -14,7 +14,7 @@ for ((i=0;i<$length;i++)); do
     # second_created=`ls -td -- ./outputs/$folder/depth-nerfacto/*/ | head -n 2 | tail -n 1`
     # folder_name=${second_created#*/}
     folder=${folders[$i]}
-    model_folder=${folders[$i]}${1}_1
+    model_folder=${folders[$i]}${1}_high
 
     folder_name=./outputs/$folder/depth-nerfacto/$model_folder/
     echo "Rendering $folder_name"

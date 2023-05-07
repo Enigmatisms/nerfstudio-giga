@@ -50,9 +50,10 @@ def read_pfm(filename):
 if __name__ == "__main__":
     import sys
     out_data, out_scale = read_pfm(sys.argv[1])
-
+    out_data = np.where(out_data > 100, 0, out_data)
     print(out_data.shape)
 
     plt.imshow(out_data, cmap = 'rainbow')
     plt.colorbar()
-    plt.show()
+    # plt.show()
+    plt.savefig("result.png")

@@ -198,7 +198,7 @@ class NearFarWithTestViewCollider(NearFarCollider):
 
     def set_nears_and_fars(self, ray_bundle: RayBundle) -> RayBundle:
         ones = torch.ones_like(ray_bundle.origins[..., 0:1])
-        near_plane = self.near_plane if self.training else 0.1
+        near_plane = self.near_plane if self.training else 0.0
         if ray_bundle.has_test_view: 
             test_base = ray_bundle.origins.shape[0] // 4 * 3
             ray_bundle.nears = ones * near_plane
