@@ -8,11 +8,15 @@ ns-train depth-nerfacto \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.near-plane 0.0 \
     --pipeline.model.far-plane 80 \
-    --pipeline.model.log2-hashmap-size 19 \
-    --pipeline.model.hidden-dim 64 \
+    --pipeline.model.log2-hashmap-size 21 \
+    --pipeline.model.hidden-dim 128 \
+    --pipeline.model.hidden-dim-color 128 \
+    --pipeline.model.hidden-dim-transient 128 \
+    --pipeline.model.num-levels 18 \
+    --pipeline.model.max-res 3000 \
+    --pipeline.model.num-proposal-samples-per-ray 512 256 \
+    --pipeline.model.num-nerf-samples-per-ray 128 \
     --pipeline.model.distortion-loss-mult 0.002 \
-    --pipeline.model.num-nerf-samples-per-ray 96 \
-    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -42,13 +46,13 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.test-view-sample-iter -1 \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
-    --pipeline.datamanager.unseen-sample-iter 10000 \
+    --pipeline.datamanager.unseen-sample-iter 20000 \
     --pipeline.datamanager.perturb-rot-sigma 5.0 \
     --pipeline.datamanager.unseen-ratio 1.0 \
     --pipeline.datamanager.sample_unseen_view True \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
-    --max-num-iterations 30000
+    --max-num-iterations 60000
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \
@@ -56,11 +60,15 @@ ns-train depth-nerfacto \
     --timestamp $full_res_name \
     --logging.local-writer.max-log-size 10 \
     --pipeline.model.near-plane 1.0 \
-    --pipeline.model.log2-hashmap-size 19 \
-    --pipeline.model.hidden-dim 64 \
+    --pipeline.model.log2-hashmap-size 21 \
+    --pipeline.model.hidden-dim 128 \
+    --pipeline.model.hidden-dim-color 128 \
+    --pipeline.model.hidden-dim-transient 128 \
+    --pipeline.model.num-levels 18 \
+    --pipeline.model.max-res 3000 \
+    --pipeline.model.num-proposal-samples-per-ray 512 256 \
+    --pipeline.model.num-nerf-samples-per-ray 128 \
     --pipeline.model.distortion-loss-mult 1e-4 \
-    --pipeline.model.num-nerf-samples-per-ray 96 \
-    --pipeline.model.num-levels 17 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -79,15 +87,15 @@ ns-train depth-nerfacto \
     --pipeline.model.min-depth-loss-mult 1e-3 \
     --pipeline.model.max-depth-loss-mult 1e-3 \
     --pipeline.model.depth-loss-iter 100000 \
-    --pipeline.model.depth-sigma 0.02 \
+    --pipeline.model.depth-sigma 0.03 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
-    --pipeline.datamanager.intrinsic-scale-factor 0.25 \
+    --pipeline.datamanager.intrinsic-scale-factor 0.5 \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
     --optimizers.proposal-networks.optimizer.lr 5e-3 \
-    --max-num-iterations 150000
+    --max-num-iterations 360000

@@ -1,5 +1,4 @@
-folders=("Museum") #"Library") #"MemorialHall" "HaiyanHall")  # 160 for newest config rendering in cuda 1
-# model_name=("theOldGate") #"2023-05-03_164124") # "2023-05-03_042830" "2023-05-03_085003")
+folders=("Library" "MemorialHall")  # 160 for newest config rendering in cuda 1
 
 if [ ""$1 = "" ]; then
     echo "You have specified no <SUFFIX>, which can be ['', '_new', '_no_skew']"

@@ -1,4 +1,4 @@
-folders=("theOldGate") #"Library") #"MemorialHall" "HaiyanHall")  # 160 for newest config rendering in cuda 1
+folders=("theOldGate" "HaiyanHall") #"Library") #"MemorialHall" "HaiyanHall")  # 160 for newest config rendering in cuda 1
 
 if [ ""$1 = "" ]; then
     echo "You have specified no <SUFFIX>, which can be ['', '_new', '_no_skew']"
@@ -18,7 +18,7 @@ for ((i=0;i<$length;i++)); do
         --load-config ${folder_name}config.yml \
         --traj filename --camera-path-filename ../dataset/$folder/output${1}_opt.json \
         --output-path renders/$folder/ --output_format images \
-        --eval_num_rays_per_chunk 4096
+        --eval_num_rays_per_chunk 2048
 done
 
 # CUDA_VISIBLE_DEVICES=0 python ./train.py
