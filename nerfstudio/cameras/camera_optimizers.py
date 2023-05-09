@@ -93,9 +93,10 @@ class CameraOptimizer(nn.Module):
         else:
             assert_never(self.config.mode)
 
-        if self.config.intrinsic_opt != "off" or self.config.distortion_opt != "off":
-            # Keep the state dict the same
-            self.pose_adjustment = torch.nn.Parameter(torch.zeros((num_cameras, 6), device=device))
+        # FIXME: not backward compatible
+        # if self.config.intrinsic_opt != "off" or self.config.distortion_opt != "off":
+        #     # Keep the state dict the same
+        #     self.pose_adjustment = torch.nn.Parameter(torch.zeros((num_cameras, 6), device=device))
 
         if self.config.distortion_opt == "full":
             self.distortion_adjustment = torch.nn.Parameter(torch.zeros((num_cameras, 6), device=device))

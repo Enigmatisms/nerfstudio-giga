@@ -279,18 +279,35 @@ class Trainer:
         CONSOLE.rule()
         CONSOLE.print("[bold green]:tada: :tada: :tada: Training Finished :tada: :tada: :tada:", justify="center")
         if getattr(self.pipeline.config.model, "freeze_field", False):
-            camera_poses = self.pipeline.datamanager.train_ray_generator.export_camera_poses()
+            camera_poses, extras = self.pipeline.datamanager.train_ray_generator.export_camera_poses()
             camera_poses = camera_poses.detach().cpu().numpy()
             CONSOLE.print(f"[blue]Camera optimization completed, outputing shape: {camera_poses.shape}")
             path = self.base_dir / "optimized_poses.json"
             output_json = {"frames": []}
+            extras_useful = self.config.pipeline.datamanager.camera_optimizer.intrinsic_opt != "off" or \
+               self.config.pipeline.datamanager.camera_optimizer.distortion_opt != "off"
+            # extras = {"distortion": distortion, "fx": fx, "fy": fy}
+            fxs = extras["fx"].view(-1)
+            fys = extras["fy"].view(-1) 
+            dists = extras["distortion"]
             for i, pose in enumerate(camera_poses):
                 output_list = pose.reshape(-1).tolist()
                 output_list.extend([0., 0., 0., 1.])
-                output_json["frames"].append({
+                frame = {
                     "camera_to_world": output_list,
                     "frame_name": f"frame_{i+1:05d}.jpg"
-                })
+                }
+                if extras_useful:
+                    k1, k2, k3, k4, p1, p2 = dists[i].tolist()
+                    frame["fx"] = fxs[i].item()
+                    frame["fy"] = fys[i].item()
+                    frame["k1"] = k1
+                    frame["k2"] = k2
+                    frame["k3"] = k3
+                    frame["k4"] = k4
+                    frame["p1"] = p1
+                    frame["p2"] = p2
+                output_json["frames"].append(frame)
             with open(path, 'w', encoding = 'utf-8') as file:
                 json.dump(output_json, file, indent = 4)
             # TODO: can we match the output?
@@ -430,7 +447,6 @@ class Trainer:
             if loss.isnan():
                 for key, val in loss_dict.items():
                     print(f"{key} = {val}")
-                # input("Press any key to continue")
         
         self.grad_scaler.scale(loss).backward()  # type: ignore
         self.optimizers.optimizer_scaler_step_all(self.grad_scaler, skip_optims)

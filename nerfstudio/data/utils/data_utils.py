@@ -93,7 +93,7 @@ def read_pfm(filename):
     data = np.reshape(data, shape)
     data = np.flipud(data)
     file.close()
-    data = np.where(data > 100, 100, data)
+    data = np.where(data > 72, 72, data)
     return data, scale
 
 

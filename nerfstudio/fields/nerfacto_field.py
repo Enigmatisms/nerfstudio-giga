@@ -120,6 +120,7 @@ class TCNNNerfactoField(Field):
         self.appearance_embedding_dim = appearance_embedding_dim
         # Camera optimzation needs this
         embedding_num = self.original_img_num if self.original_img_num > 0 else self.num_images
+        self.embedding_num = embedding_num
         self.embedding_appearance = Embedding(embedding_num, self.appearance_embedding_dim)
         self.use_average_appearance_embedding = use_average_appearance_embedding
         self.use_transient_embedding = use_transient_embedding
@@ -292,6 +293,7 @@ class TCNNNerfactoField(Field):
                 embedded_appearance = self.embedding_appearance(camera_indices)
         else:
             # Test time will not have test view rays
+            # FIXME: we should add an option to use camera_indices
             if self.use_average_appearance_embedding:
                 embedded_appearance = torch.ones(
                     (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device

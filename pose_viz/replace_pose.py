@@ -19,6 +19,7 @@ def parser_opts():
     parser.add_argument("-i", "--input_path",       default = "../outputs/", help = "Input name", type = str)
     parser.add_argument("-o", "--output_json_path", default = "../../dataset/images_and_cams/full/", 
                         help = "Input pose and camera intrinsics file.", type = str)
+    parser.add_argument("--scale",                  default = 1.0, help = "Intrinsic scaling factor.", type = float)
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -40,10 +41,20 @@ if __name__ == "__main__":
     template_pose_num = len(template["camera_path"])
     assert(template_pose_num == len(opt_poses["frames"]))
 
+    intrinsic_exist = False
     for i in range(template_pose_num):
+        pose_frame = opt_poses["frames"][i]
         template["camera_path"][i]["camera_to_world"] = \
-            opt_poses["frames"][i]["camera_to_world"]
+            pose_frame["camera_to_world"]
+        if "fx" in pose_frame:
+            intrinsic_exist = True
+            template["camera_path"][i]["fx"] = pose_frame["fx"] * opts.scale
+            template["camera_path"][i]["fy"] = pose_frame["fy"] * opts.scale
+        if "k1" in pose_frame:
+            all_names = ("k1", "k2", "k3", "k4", "p1", "p2")
+            for name in all_names:
+                template["camera_path"][i][name] = pose_frame[name]
 
     with open(output_json_path, 'w', encoding = 'utf-8') as file:
         json.dump(template, file, indent = 4)
-    print(f"Output to '{output_json_path}'")
+    print(f"Output to '{output_json_path}'. Use intrinsics: {intrinsic_exist}, scaling: {opts.scale}")

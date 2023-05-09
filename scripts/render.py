@@ -70,7 +70,8 @@ def _render_trajectory_video(
     seconds: float = 5.0,
     output_format: Literal["images", "video"] = "video",
     camera_type: CameraType = CameraType.PERSPECTIVE,
-    extra_data: Dict = None
+    extra_data: Dict = None,
+    end_index: Optional[int] = None,
 ) -> None:
     """Helper function to create a video of the spiral trajectory.
 
@@ -131,10 +132,8 @@ def _render_trajectory_video(
                 # FIXME: pass in distortion params, format is still unknown
                 # FIXME: we can make use of numpy tensor to accelerate this computation
                 camera_ray_bundle = cameras.generate_rays(camera_indices=camera_idx, aabb_box=aabb_box)
-
-                # FIXME: for peony garden, :42 will produce correct result. But test view merge problem (more images than needed) should be fixed
                 nearest_id = get_nearest_camera(
-                    pipeline.datamanager.train_dataparser_outputs.cameras.camera_to_worlds[:42],
+                    pipeline.datamanager.train_dataparser_outputs.cameras.camera_to_worlds[:end_index],
                     cameras.camera_to_worlds[camera_idx],
                 )
                 camera_ray_bundle.camera_indices = torch.full_like(camera_ray_bundle.camera_indices, nearest_id, 
@@ -333,6 +332,8 @@ class RenderTrajectory:
     """Number of interpolation steps between eval dataset cameras."""
     eval_num_rays_per_chunk: Optional[int] = None
     """Specifies number of rays per chunk during eval."""
+    original_img_num: Optional[int] = None
+    """Number of original images (for train / test merged dataset)."""
 
     def main(self) -> None:
         """Main function."""
@@ -392,7 +393,8 @@ class RenderTrajectory:
             seconds=seconds,
             output_format=self.output_format,
             camera_type=camera_type,
-            extra_data=camera_file
+            extra_data=camera_file,
+            end_index=self.original_img_num
         )
 
 

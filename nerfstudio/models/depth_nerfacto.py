@@ -24,7 +24,7 @@ from typing import Dict, Tuple, Type
 import torch
 
 from nerfstudio.cameras.rays import RayBundle
-from nerfstudio.model_components.losses import DepthLossType, depth_loss
+from nerfstudio.model_components.losses import DepthLossType, depth_loss, ds_occlusion_loss
 from nerfstudio.model_components.scheduler import SimpleScheduler
 from nerfstudio.models.nerfacto import NerfactoModel, NerfactoModelConfig
 from nerfstudio.utils import colormaps
@@ -44,6 +44,8 @@ class DepthNerfactoModelConfig(NerfactoModelConfig):
     is_euclidean_depth: bool = False
     """Whether input depth maps are Euclidean distances (or z-distances)."""
     depth_sigma: float = 0.01
+    """Uncertainty around depth values in meters (defaults to 1cm)."""
+    occlusion_sigma: float = 1.0
     """Uncertainty around depth values in meters (defaults to 1cm)."""
     should_decay_sigma: bool = False
     """Whether to exponentially decay sigma."""
@@ -89,19 +91,24 @@ class DepthNerfactoModel(NerfactoModel):
             metrics_dict["depth_loss"] = 0.0
             sigma = self._get_sigma().to(self.device)
             termination_depth = batch["depth_image"].to(self.device)
-            
-            for i in range(len(outputs["weights_list"])):
+            weight_list_len = len(outputs["weights_list"])
+            for i in range(weight_list_len):
+                ray_samples = outputs["ray_samples_list"][i]
                 metrics_dict["depth_loss"] += depth_loss(
                     weights=outputs["weights_list"][i],
-                    ray_samples=outputs["ray_samples_list"][i],
+                    ray_samples=ray_samples,
                     termination_depth=termination_depth,
                     predicted_depth=outputs["depth"],
                     sigma=sigma,
                     directions_norm=outputs["directions_norm"],
                     is_euclidean=self.config.is_euclidean_depth,
                     depth_loss_type=self.config.depth_loss_type,
-                ) / len(outputs["weights_list"])
+                ) / weight_list_len
 
+            # Qianyue He's note: depth supervised occlusion loss can be enabled here
+            # metrics_dict["ds_occ_loss"] = ds_occlusion_loss(
+            #     outputs["density"], outputs["ray_samples"], termination_depth, self.config.occlusion_sigma
+            # )
         return metrics_dict
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
@@ -110,6 +117,9 @@ class DepthNerfactoModel(NerfactoModel):
             assert metrics_dict is not None and "depth_loss" in metrics_dict
             depth_loss_mult = self.depth_sch.update()
             loss_dict["depth_loss"] = depth_loss_mult * metrics_dict["depth_loss"]
+            # occ_loss_mult = self.occ_mult_sch.get()
+            # loss_dict["ds_occ_loss"] = occ_loss_mult * metrics_dict["ds_occ_loss"]
+            # loss_dict["ds_occ_loss_nw"] = loss_dict["ds_occ_loss"].detach()
         return loss_dict
 
     def get_image_metrics_and_images(
