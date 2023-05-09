@@ -22,13 +22,13 @@ def parser_opts():
                         help = "Input modes to choose from.", type = str)
     parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/images_and_cams/full/", 
                         help = "Input pose and camera intrinsics file.", type = str)
-    parser.add_argument("-o", "--output_name",      default = "transforms_opt.json", help = "Output file name", type = str)
     parser.add_argument("--input_img_path",         default = "../renders/", help = "Input image file path", type = str)
     parser.add_argument("--output_path",            default = "../../dataset/images_and_cams/full/", 
                         help = "Where the images and transform.json are stored", type = str)
 
     parser.add_argument("-s", "--scale",            default = 1.0, help = "Scale the image (originally, 1/8 resolution)", type = float)
     parser.add_argument("-f", "--filter",           default = False, action = "store_true", help = "Do bilateral filtering")
+    parser.add_argument("--no_image",               default = False, action = "store_true", help = "Skip image processing")
     return parser.parse_args()
 
 def get_images(img_path: str, opts: configargparse.Namespace):
@@ -41,14 +41,17 @@ def get_images(img_path: str, opts: configargparse.Namespace):
         dict_key = f"{image_id:08d}_cam.txt"
         new_name = f"frame_{i + 1:05d}.jpg"
         file_path = os.path.join(img_path, name)
-        img = cv.imread(file_path)
-        if abs(opts.scale - 1) > 1e-5:
-            h, w, _ = img.shape
-            scaled_h, scaled_w = int(h * opts.scale), int(w * opts.scale)
-            img = cv.resize(img, (scaled_w, scaled_h))
-        if opts.filter:
-            original = img.copy().astype(np.float32)
-            img = cv.bilateralFilter(original, 7, 10, 50)
+        if opts.no_image:
+            img = None
+        else:
+            img = cv.imread(file_path)
+            if abs(opts.scale - 1) > 1e-5:
+                h, w, _ = img.shape
+                scaled_h, scaled_w = int(h * opts.scale), int(w * opts.scale)
+                img = cv.resize(img, (scaled_w, scaled_h))
+            if opts.filter:
+                original = img.copy().astype(np.float32)
+                img = cv.bilateralFilter(original, 7, 10, 50)
         image_infos[dict_key] = (new_name, img)
     return image_infos
 
@@ -99,11 +102,12 @@ if __name__ == "__main__":
             "transform_matrix": pose,
             "original_name": name
         })
-        cv.imwrite(os.path.join(image_folder, image_name), image)
+        if not opts.no_image:
+            cv.imwrite(os.path.join(image_folder, image_name), image)
         
     output_json["applied_transform"] = test_data["applied_transform"]
 
-    output_file_path = os.path.join(output_folder, opts.output_name)
+    output_file_path = os.path.join(output_folder, f"transforms_{opts.mode}_opt.json")
     with open(output_file_path, 'w', encoding = 'utf-8') as file:
         print(f"Output processed pose optimzation dataset to {output_file_path}")
         json.dump(output_json, file, indent = 4)
