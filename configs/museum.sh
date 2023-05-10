@@ -1,6 +1,6 @@
 file_name="transforms${2}"
 folder_name="museum${2}"
-full_res_name="Museum${2}_high"
+full_res_name="Museum${2}_high1"
 
 ns-train depth-nerfacto \
     --data ${1}/Museum/$file_name.json \
@@ -84,9 +84,9 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.min-depth-loss-mult 1e-4 \
     --pipeline.model.max-depth-loss-mult 1e-3 \
-    --pipeline.model.depth-loss-iter 100000 \
+    --pipeline.model.depth-loss-iter 150000 \
     --pipeline.model.depth-sigma 0.02 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \

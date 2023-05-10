@@ -1,4 +1,3 @@
 # Training procedures, for specific scene please go to the ./configs/
 
-CUDA_VISIBLE_DEVICES=3 ./configs/haiyan_hall.sh ../dataset/ _colmap
-CUDA_VISIBLE_DEVICES=3 ./configs/daya_temple.sh ../dataset/
+CUDA_VISIBLE_DEVICES=3 ./config1/daya_temple.sh ../dataset/ _no_skew

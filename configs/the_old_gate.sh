@@ -1,6 +1,6 @@
 file_name="transforms${2}"
 folder_name="old_gate${2}"
-full_res_name="theOldGate${2}_high"
+full_res_name="theOldGate${2}_high1"
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \
@@ -40,10 +40,10 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.skip-eval True \
     --pipeline.model.sample-unseen-views True \
     --pipeline.model.kl-divergence-mult 0.1 \
-    --pipeline.model.test-occ-loss-mult 0.05 \
-    --pipeline.model.test-near-plane 0.02 \
-    --pipeline.model.test-far-plane 0.2 \
-    --pipeline.datamanager.test-view-sample-iter -1 \
+    --pipeline.model.test-occ-loss-mult 1e-5 \
+    --pipeline.model.test-near-plane 0.0 \
+    --pipeline.model.test-far-plane 0.1 \
+    --pipeline.datamanager.test-view-sample-iter 60000 \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --pipeline.datamanager.unseen-sample-iter 20000 \
@@ -68,7 +68,7 @@ ns-train depth-nerfacto \
     --pipeline.model.max-res 3000 \
     --pipeline.model.num-proposal-samples-per-ray 512 256 \
     --pipeline.model.num-nerf-samples-per-ray 128 \
-    --pipeline.model.distortion-loss-mult 1e-4 \
+    --pipeline.model.distortion-loss-mult 1e-3 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -84,15 +84,19 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.min-depth-loss-mult 1e-4 \
     --pipeline.model.max-depth-loss-mult 1e-3 \
-    --pipeline.model.depth-loss-iter 100000 \
+    --pipeline.model.depth-loss-iter 150000 \
     --pipeline.model.depth-sigma 0.03 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
     --pipeline.model.kl-divergence-mult 0.1 \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.5 \
+    --pipeline.model.test-occ-loss-mult 1e-5 \
+    --pipeline.model.test-near-plane 0.0 \
+    --pipeline.model.test-far-plane 0.1 \
+    --pipeline.datamanager.test-view-sample-iter 355000 \
     --viewer.quit-on-train-completion True \
     --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \

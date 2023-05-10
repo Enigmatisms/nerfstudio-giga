@@ -1,6 +1,6 @@
 file_name="transforms${2}"
 folder_name="memo${2}"
-full_res_name="MemorialHall${2}_high"
+full_res_name="MemorialHall${2}_high1"
 
 ns-train depth-nerfacto \
     --data ${1}/MemorialHall/$file_name.json \
@@ -65,7 +65,7 @@ ns-train depth-nerfacto \
     --pipeline.model.max-res 3000 \
     --pipeline.model.num-proposal-samples-per-ray 512 256 \
     --pipeline.model.num-nerf-samples-per-ray 128 \
-    --pipeline.model.distortion-loss-mult 1e-5 \
+    --pipeline.model.distortion-loss-mult 1e-4 \
     --pipeline.model.orientation-loss-mult 0.0001 \
     --pipeline.model.proposal-update-every 5 \
     --pipeline.model.predict-normals False \
@@ -81,9 +81,9 @@ ns-train depth-nerfacto \
     --pipeline.model.occ-reg-iters 1000 \
     --pipeline.model.sigma-perturb-std 0.0 \
     --pipeline.model.sigma-perturb-iter 0 \
-    --pipeline.model.min-depth-loss-mult 1e-3 \
+    --pipeline.model.min-depth-loss-mult 1e-4 \
     --pipeline.model.max-depth-loss-mult 1e-3 \
-    --pipeline.model.depth-loss-iter 100000 \
+    --pipeline.model.depth-loss-iter 150000 \
     --pipeline.model.depth-sigma 0.02 \
     --pipeline.model.depth-loss-type DS_NERF \
     --pipeline.model.sample-unseen-views False \
