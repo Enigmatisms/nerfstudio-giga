@@ -1,4 +1,4 @@
-folders=("PeonyGarden" "ScienceSquare") #"Library"
+folders=("PeonyGarden" "ScienceSquare" "HaiyanHall")
 # model_name=("theOldGate") #"2023-05-03_164124") # "2023-05-03_042830" "2023-05-03_085003")
 
 if [ ""$1 = "" ]; then

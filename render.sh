@@ -10,7 +10,7 @@ fi
 length=${#folders[@]}
 for ((i=0;i<$length;i++)); do
     folder=${folders[$i]}
-    model_folder=${folders[$i]}${1}_high
+    model_folder=${folders[$i]}${1}_1
 
     folder_name=./outputs/$folder/depth-nerfacto/$model_folder/
     echo "Rendering $folder_name"
@@ -18,7 +18,7 @@ for ((i=0;i<$length;i++)); do
         --load-config ${folder_name}config.yml \
         --traj filename --camera-path-filename ../dataset/$folder/output${1}_opt.json \
         --output-path renders/$folder/ --output_format images \
-        --eval_num_rays_per_chunk 4096
+        --eval_num_rays_per_chunk 8192
 done
 
 # CUDA_VISIBLE_DEVICES=0 python ./train.py

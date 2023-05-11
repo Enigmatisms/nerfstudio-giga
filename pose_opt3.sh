@@ -12,24 +12,23 @@ fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
 image_nums=(83 25 53 17 54 42 32 47)
-levels=(16 17 17 17 17 17 17 17)
+int_mode=("off" "fixed" "fixed" "fixed" "fixed" "off" "fixed" "fixed")
 
-opt_ids=(5)
+opt_ids=(7)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     image_num=${image_nums[$idx]}
-    level=${levels[$idx]}
     CUDA_VISIBLE_DEVICES=3 ns-train depth-nerfacto \
         --data ../dataset/${folder}_opt/transforms${1}_opt.json \
         --load-dir ./outputs/$folder/depth-nerfacto/${folder}${1}${2}/nerfstudio_models/ \
         --timestamp ${folder}${1}${2} \
         --logging.local-writer.max-log-size 10 \
-        --pipeline.model.num-nerf-samples-per-ray 96 \
+        --pipeline.model.num-nerf-samples-per-ray 160 \
         --pipeline.model.log2-hashmap-size 19 \
         --pipeline.model.hidden-dim 64 \
         --pipeline.model.near-plane 0.0 \
         --pipeline.model.far-plane 80 \
-        --pipeline.model.num-levels $level \
+        --pipeline.model.num-levels 17 \
         --pipeline.model.background-color last_sample \
         --pipeline.model.original-image-num $image_num \
         --pipeline.datamanager.skip-eval True \
@@ -40,10 +39,17 @@ for idx in ${opt_ids[@]}; do
         --optimizers.fields.optimizer.lr 0 \
         --optimizers.proposal-networks.optimizer.lr 0 \
         --pipeline.datamanager.camera-optimizer.mode SE3 \
-        --pipeline.datamanager.camera-optimizer.intrinsic-opt off \
-        --pipeline.datamanager.camera-optimizer.distortion-opt off \
+        --pipeline.datamanager.camera-optimizer.intrinsic-opt ${int_mode[$idx]} \
+        --pipeline.datamanager.camera-optimizer.distortion-opt ${int_mode[$idx]} \
+        --pipeline.datamanager.camera-optimizer.optimizer.lr 5e-4 \
         --pipeline.datamanager.camera-optimizer.scheduler.lr-final 5e-5 \
         --pipeline.datamanager.camera-optimizer.scheduler.max-steps 9000 \
         --pipeline.datamanager.transform_path ./outputs/$folder/depth-nerfacto/${folder}${1}${2}/dataparser_transforms.json \
         --max-num-iterations 12000
 done
+
+cd pose_viz/
+python3 ./replace_pose.py -s theOldGate_opt -n theOldGate_colmap_high -m "none" -o ../../dataset/ --scale 4.0
+# python3 ./replace_pose.py -s PeonyGarden_opt -n PeonyGarden_colmap_high -m "colmap" -o ../../dataset/ --scale 4.0
+# python3 ./replace_pose.py -s ScienceSquare_opt -n ScienceSquare_colmap_high -m "no_skew" -o ../../dataset/ --scale 4.0
+cd ..

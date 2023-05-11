@@ -12,14 +12,14 @@ fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
 image_nums=(83 25 53 17 54 42 32 47)
-levels=(16 17 17 17 17 17 17 17)
+int_mode=("off" "fixed" "fixed" "fixed" "fixed" "off" "fixed" "fixed")
 
-opt_ids=(6 7)
+
+opt_ids=(3)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     image_num=${image_nums[$idx]}
-    level=${levels[$idx]}
-    CUDA_VISIBLE_DEVICES=2 ns-train depth-nerfacto \
+    CUDA_VISIBLE_DEVICES=2,3 ns-train depth-nerfacto \
         --data ../dataset/${folder}_opt/transforms${1}_opt.json \
         --load-dir ./outputs/$folder/depth-nerfacto/${folder}${1}${2}/nerfstudio_models/ \
         --timestamp ${folder}${1}${2} \
@@ -29,7 +29,7 @@ for idx in ${opt_ids[@]}; do
         --pipeline.model.hidden-dim 64 \
         --pipeline.model.near-plane 0.0 \
         --pipeline.model.far-plane 80 \
-        --pipeline.model.num-levels $level \
+        --pipeline.model.num-levels 17 \
         --pipeline.model.background-color last_sample \
         --pipeline.model.original-image-num $image_num \
         --pipeline.datamanager.skip-eval True \
@@ -40,10 +40,15 @@ for idx in ${opt_ids[@]}; do
         --optimizers.fields.optimizer.lr 0 \
         --optimizers.proposal-networks.optimizer.lr 0 \
         --pipeline.datamanager.camera-optimizer.mode SE3 \
-        --pipeline.datamanager.camera-optimizer.intrinsic-opt fixed \
-        --pipeline.datamanager.camera-optimizer.distortion-opt fixed \
+        --pipeline.datamanager.camera-optimizer.intrinsic-opt ${int_mode[$idx]} \
+        --pipeline.datamanager.camera-optimizer.distortion-opt ${int_mode[$idx]} \
+        --pipeline.datamanager.camera-optimizer.optimizer.lr 1e-4 \
         --pipeline.datamanager.camera-optimizer.scheduler.lr-final 5e-5 \
-        --pipeline.datamanager.camera-optimizer.scheduler.max-steps 8000 \
+        --pipeline.datamanager.camera-optimizer.scheduler.max-steps 9000 \
         --pipeline.datamanager.transform_path ./outputs/$folder/depth-nerfacto/${folder}${1}${2}/dataparser_transforms.json \
-        --max-num-iterations 11000
+        --max-num-iterations 12000
 done
+
+cd pose_viz/
+python3 ./replace_pose.py -s MemorialHall_opt -n MemorialHall_no_skew -m "no_skew" -o ../../dataset/ --scale 8.0
+cd ..

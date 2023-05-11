@@ -26,6 +26,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+post_process/*
+!post_process/*.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -164,7 +166,7 @@ cython_debug/
 
 # Experiments and outputs
 outputs/*
-!outputs/copier.sh
+!outputs/*.sh
 exports/
 renders/
 renders1/

@@ -7,7 +7,7 @@ if [ ! -d $output_folder ]; then
 fi
 
 for ((i=0;i<8;i++)); do
-    path=${folders[$i]}/depth-nerfacto/${names[$i]}${1}/dataparser_transforms.json
+    path=${folders[$i]}/depth-nerfacto/${folders[$i]}${1}/dataparser_transforms.json
     if [ ! -f $path ]; then
         echo "'$path' does not exist, skipping..."
     else
@@ -16,5 +16,6 @@ for ((i=0;i<8;i++)); do
             mkdir -p $output_path
         fi
         cp $path $output_path
+        cp $path ../../dataset/${folders[$i]}
     fi
 done

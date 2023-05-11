@@ -1,4 +1,4 @@
-folders=("Museum") #"Library") #"MemorialHall" "HaiyanHall")  # 160 for newest config rendering in cuda 1
+folders=("PeonyGarden") #"Library") #"MemorialHall" "HaiyanHall")  # 160 for newest config rendering in cuda 1
 # model_name=("theOldGate") #"2023-05-03_164124") # "2023-05-03_042830" "2023-05-03_085003")
 
 if [ ""$1 = "" ]; then
@@ -22,7 +22,8 @@ for ((i=0;i<$length;i++)); do
         --load-config ${folder_name}config.yml \
         --traj filename --camera-path-filename ../dataset/$folder/output${1}_opt.json \
         --output-path renders/$folder/ --output_format images \
-        --eval_num_rays_per_chunk 4096
+        --original-img-num 42 \
+        --eval_num_rays_per_chunk 8192
 done
 
 # CUDA_VISIBLE_DEVICES=0 python ./train.py

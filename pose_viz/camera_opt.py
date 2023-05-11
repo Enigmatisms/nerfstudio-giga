@@ -13,22 +13,22 @@ import natsort
 import numpy as np
 import tqdm
 
-
 def parser_opts():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("-i", "--input_scene",      required = True, help = "Input scene", type = str)
     parser.add_argument("-m", "--mode",             required = True, default = "new", choices = ["none", "new", "no_skew", "colmap"], 
                         help = "Input modes to choose from.", type = str)
-    parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/images_and_cams/full/", 
+    parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/", 
                         help = "Input pose and camera intrinsics file.", type = str)
     parser.add_argument("--input_img_path",         default = "../renders/", help = "Input image file path", type = str)
-    parser.add_argument("--output_path",            default = "../../dataset/images_and_cams/full/", 
+    parser.add_argument("--output_path",            default = "../../dataset/", 
                         help = "Where the images and transform.json are stored", type = str)
 
     parser.add_argument("-s", "--scale",            default = 1.0, help = "Scale the image (originally, 1/8 resolution)", type = float)
     parser.add_argument("-f", "--filter",           default = False, action = "store_true", help = "Do bilateral filtering")
     parser.add_argument("--no_image",               default = False, action = "store_true", help = "Skip image processing")
+    # parser.add_argument("--transform",              default = False, action = "store_true", help = "The same meaning as in colmap_icp.py")
     return parser.parse_args()
 
 def get_images(img_path: str, opts: configargparse.Namespace):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         
     output_json["applied_transform"] = test_data["applied_transform"]
 
-    output_file_path = os.path.join(output_folder, f"transforms_{opts.mode}_opt.json")
+    output_file_path = os.path.join(output_folder, f"transforms{mode_mapping[opts.mode]}_opt.json")
     with open(output_file_path, 'w', encoding = 'utf-8') as file:
         print(f"Output processed pose optimzation dataset to {output_file_path}")
         json.dump(output_json, file, indent = 4)

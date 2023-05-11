@@ -5,17 +5,17 @@
 # To generate original poses, use -o (skip pose registration and load from test.json)
 
 scale=1
-folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare")
+folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare")
 # folders=("Library")
 
 for folder in ${folders[@]}; do
-    python3 ./colmap_icp.py --input_path ../../dataset/images_and_cams/full/ \
+    python3 ./colmap_icp.py --input_path ../../dataset/ \
         --scene_name $folder --output_name "output$1.json" \
         --colmap_name transforms$1.json \
-        --scale $scale --invalid_th 100 -v
+        --scale $scale --invalid_th 100 -o
 done
 
-python3 ./colmap_icp.py --input_path ../../dataset/images_and_cams/full/ \
+python3 ./colmap_icp.py --input_path ../../dataset/ \
         --scene_name theOldGate --output_name "output$1.json" \
         --colmap_name transforms$1.json \
-        --scale $scale --invalid_th 100 -v -t
+        --scale $scale --invalid_th 100 -o -t

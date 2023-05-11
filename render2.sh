@@ -1,4 +1,4 @@
-folders=("HaiyanHall" "Library" "MemorialHall")  # 160 for newest config rendering in cuda 1
+folders=("Museum")  # 160 for newest config rendering in cuda 1
 
 if [ ""$1 = "" ]; then
     echo "You have specified no <SUFFIX>, which can be ['', '_new', '_no_skew']"
@@ -13,7 +13,7 @@ for ((i=0;i<$length;i++)); do
     # second_created=`ls -td -- ./outputs/$folder/depth-nerfacto/*/ | head -n 2 | tail -n 1`
     # folder_name=${second_created#*/}
     folder=${folders[$i]}
-    model_folder=${folders[$i]}${1}_high
+    model_folder=${folders[$i]}${1}
 
     folder_name=./outputs/$folder/depth-nerfacto/$model_folder/
     echo "Rendering $folder_name"
