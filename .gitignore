@@ -28,6 +28,7 @@ share/python-wheels/
 MANIFEST
 post_process/*
 !post_process/*.py
+old_shells/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

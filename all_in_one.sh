@@ -18,11 +18,6 @@ set -e
 # # HLOC 位姿计算
 # echo "[INFO] hloc_pose_gen.sh: HLOC, two processes, pose refinement..."
 
-# if [ ! -d $2 ]; then
-#     echo "[INFO] '$2' does not exist, creating folder..."
-#     mkdir -p $2
-# fi
-
 # # [UNIT TEST-1]: 生成原始数据集
 # 两个进程跑 HLOC 位姿计算，考虑到有多 GPU，但尚不清楚 CPU/内存的占用 --- TODO: 此处或许可以激进一些
 # $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）
@@ -48,6 +43,11 @@ set -e
 #     wait $pid
 # done
 
+if [ ! -d $2 ]; then
+    echo "[INFO] '$2' does not exist, creating folder..."
+    mkdir -p $2
+fi
+
 # Version (测试用): 单进程
 ./hloc_pose_gen1.sh $1 $2
 ./hloc_pose_gen2.sh $1 $2
@@ -62,4 +62,8 @@ echo "[INFO] hloc_pose_replace.sh: HLOC poses are being replaced..."
 echo "[INFO] HLOC pose replacing completed."
 
 # [TODO] [UNIT_TEST-2 生成 HLOC 数据集]
-# HLOC 将会生成 4种分辨率的图片，我们只留1/4分辨率图像，TODO: 首先需要知道前面所有的流程生成出来是什么样的
+# HLOC 将会生成 4种分辨率的图片，我们只留1/4分辨率图像
+./make_quarter.sh $2
+echo "[INFO] HLOC dataset without depth completed"
+
+# 基本数据集的生成到此结束 --- IGEV 进一步处理数据集将在外部进行
