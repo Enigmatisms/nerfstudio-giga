@@ -1,5 +1,5 @@
-file_name="transforms${2}"
-folder_name="science${2}"
+file_name="transforms_no_skew"
+folder_name="ScienceSquare_no_skew"
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \

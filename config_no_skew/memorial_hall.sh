@@ -1,5 +1,5 @@
-file_name="transforms${2}"
-folder_name="memo${2}"
+file_name="transforms_no_skew"
+folder_name="MemorialHall_no_skew"
 
 ns-train depth-nerfacto \
     --data ${1}/MemorialHall/$file_name.json \

@@ -1,5 +1,5 @@
-file_name="transforms${2}"
-folder_name="museum${2}"
+file_name="transforms_no_skew"
+folder_name="Museum_no_skew"
 
 ns-train depth-nerfacto \
     --data ${1}/Museum/$file_name.json \
