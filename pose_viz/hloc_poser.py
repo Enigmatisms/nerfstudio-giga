@@ -1,7 +1,9 @@
 import json
 import os
+
 import configargparse
 import numpy as np
+
 
 def get_idx(path: str):
     return int(path[path.find("_")+1:path.find(".")])
@@ -15,7 +17,7 @@ def parser_opts():
     parser.add_argument("-m", "--merge",        default = False, action = "store_true", help = "whether to merge train / test dataset")
     parser.add_argument("-t", "--transform",    default = False, action = "store_true", help = "Whether to cancel out the applied transform")
     parser.add_argument("-n", "--no_skew",      default = False, action = "store_true", help = "Whether to use skews in the transform.json")
-    parser.add_argument("--scale",              default = 1.0, help = "Scale intrinsic and image wh (if HLOC uses half resolution images)")
+    parser.add_argument("--scale",              default = 1.0, help = "Scale intrinsic and image wh (if HLOC uses half resolution images)", type=float)
     return parser.parse_args()
 
 if __name__ == "__main__":

@@ -11,16 +11,16 @@ for idx in ${opt_ids[@]}; do
     scene=${folders[$idx]}
     input_path=$input_folder$scene/
     output_path=$output_folder$scene/
-    python3 ./hloc_poser.py -i $input_path --merge -o "transforms_colmap.json" --outpath $output_path               # 保留原本的 transforms.json
-    python3 ./hloc_poser.py -i $input_path --merge --no_skew -o "transforms_no_skew.json" --outpath $output_path    # 生成 纯原始位姿 + 纯原始内参 json
+    python3 ./pose_viz/hloc_poser.py -i $output_path --merge -o "transforms_colmap.json" --outpath $output_path  --scale 2.0               # 保留原本的 transforms.json
+    python3 ./pose_viz/hloc_poser.py -i $output_path --merge --no_skew -o "transforms_no_skew.json" --outpath $output_path --scale 2.0   # 生成 纯原始位姿 + 纯原始内参 json
     # 复制相关 json 到我们构建数据集的位置
     cp $input_path/train*.json $output_path
     cp $input_path/test.json $output_path
 done
 
 # theOldGate 需要将其 applied transform 去掉 （theOldGate 位姿有一定特殊性）
-python3 ./hloc_poser.py -i ${input_folder}theOldGate --transform --merge -o "transforms.json" --outpath ${output_folder}theOldGate/
-python3 ./hloc_poser.py -i ${input_folder}theOldGate --transform --merge --no_skew -o "transforms_no_skew.json" --outpath ${output_folder}theOldGate/
+python3 ./pose_viz/hloc_poser.py -i ${output_folder}theOldGate --transform --merge -o "transforms_colmap.json" --outpath ${output_folder}theOldGate/ --scale 2.0
+python3 ./pose_viz/hloc_poser.py -i ${output_folder}theOldGate --transform --merge --no_skew -o "transforms_no_skew.json" --outpath ${output_folder}theOldGate/ --scale 2.0
 
 cp ${input_folder}theOldGate/train*.json ${output_folder}theOldGate/
 cp ${input_folder}theOldGate/test.json ${output_folder}theOldGate/
