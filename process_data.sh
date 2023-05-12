@@ -16,4 +16,4 @@
 ns-process-data images \
     --data ../dataset/images_and_cams/theOldGate/image_scaled/ \
     --output-dir ../dataset/images_and_cams/theOldGate/gate_hloc/ \
-    --sfm-tool hloc --refine-pixsfm --use-sfm-depth
+    --sfm-tool hloc --refine-pixsfm

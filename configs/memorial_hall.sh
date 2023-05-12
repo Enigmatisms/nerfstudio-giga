@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="memo${2}"
-full_res_name="MemorialHall${2}_high"
+file_name="transforms_colmap"
+folder_name="memo"
+full_res_name="MemorialHall_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/MemorialHall/$file_name.json \

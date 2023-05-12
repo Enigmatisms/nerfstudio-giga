@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="peony${2}"
-full_res_name="PeonyGarden${2}_high"
+file_name="transforms_colmap"
+folder_name="peony"
+full_res_name="PeonyGarden_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/PeonyGarden/$file_name.json \

@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="science${2}"
-full_res_name="ScienceSquare${2}_high"
+file_name="transforms_colmap"
+folder_name="science"
+full_res_name="ScienceSquare_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/ScienceSquare/$file_name.json \
