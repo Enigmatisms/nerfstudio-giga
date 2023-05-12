@@ -19,9 +19,13 @@ Requires hloc module from : https://github.com/cvg/Hierarchical-Localization
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import sys
 from pathlib import Path
+from typing import Optional
 
+import natsort
+import numpy as np
 from rich.console import Console
 from typing_extensions import Literal
 
@@ -30,13 +34,8 @@ from nerfstudio.process_data.process_data_utils import CameraModel
 try:
     # TODO(1480) un-hide pycolmap import
     import pycolmap
-    from hloc import (
-        extract_features,
-        match_features,
-        pairs_from_exhaustive,
-        pairs_from_retrieval,
-        reconstruction,
-    )
+    from hloc import (extract_features, match_features, pairs_from_exhaustive,
+                      pairs_from_poses, pairs_from_retrieval, reconstruction)
 except ImportError:
     _HAS_HLOC = False
 else:
@@ -66,6 +65,7 @@ def run_hloc(
     ] = "superglue",
     num_matched: int = 50,
     refine_pixsfm: bool = False,
+    poses_file: Optional[Path] = None,
 ) -> None:
     """Runs hloc on the images.
 
@@ -104,12 +104,33 @@ def run_hloc(
 
     references = [p.relative_to(image_dir).as_posix() for p in image_dir.iterdir()]
     extract_features.main(feature_conf, image_dir, image_list=references, feature_path=features)
+    if num_matched >= len(references):
+        num_matched = len(references)
     if matching_method == "exhaustive":
         pairs_from_exhaustive.main(sfm_pairs, image_list=references)
+    elif matching_method == "poses":
+        assert poses_file
+        images = {}
+        CONSOLE.print("Read Poses from ", poses_file)
+        with open(poses_file, "r") as f:
+            poses_data = json.load(f)
+
+            class FooImage:
+                def __init__(self, name, matrix):
+                    self.name = name
+                    self.R = matrix[0:3, 0:3]
+                    self.tvec = matrix[0:3, 3]
+
+                def qvec2rotmat(self):
+                    return self.R
+
+            sorted_ref = natsort.natsorted(references)
+            for i, frame in enumerate(poses_data["frames"]):
+                matrix = np.array(frame["transform_matrix"])
+                images[i + 1] = FooImage(name=sorted_ref[i], matrix=matrix)
+        pairs_from_poses.main2(sfm_pairs, num_matched, images, rotation_threshold=60)  # 60 in degrees
     else:
         retrieval_path = extract_features.main(retrieval_conf, image_dir, outputs)
-        if num_matched >= len(references):
-            num_matched = len(references)
         pairs_from_retrieval.main(retrieval_path, sfm_pairs, num_matched=num_matched)
     match_features.main(matcher_conf, sfm_pairs, features=features, matches=matches)
 

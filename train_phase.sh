@@ -1,5 +1,9 @@
-dataset_path=$1
+#!/bin/bash
 # 此处开始我们真正考虑模型训练，此前都是进行数据集生成
+
+dataset_path=$1
+set -e
+# 只要有 process 不成功，shell将会自动结束进程，不会继续执行
 
 # 首先，训练1/8分辨率的位姿配准结果并渲染
 
@@ -44,10 +48,7 @@ echo "[INFO] Pose optimization completed."
 # 4. pose_replacer 得到 output_xxxx_opt.json
 # 注意，此中需要进行处理: DayaTemple 与 PeonyGarden 有需要替换的部分
 
-echo "[INFO] Pose optimization started."
+echo "[INFO] Pose placing started."
 ./opt_pose_replacer.sh $dataset_path
-
-# 5. 渲染结果
-
-# 6. 后处理
-
+echo "[INFO] Pose placing completed."
+echo "[INFO] Training completed."

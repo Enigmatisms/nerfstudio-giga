@@ -6,16 +6,17 @@ if [ ! -d $input_folder ]; then
 fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
-opt_ids=(1 0 2 3)
+opt_ids=(2 0)
+methods=("poses" "vocab_tree" "poses" "vocab_tree")
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     CUDA_VISIBLE_DEVICES=0 ns-process-data images \
         --data $input_folder$folder/images_scaled/ \
         --output-dir $output_folder$folder/ \
-        --sfm-tool hloc --refine-pixsfm --use-sfm-depth
+        --sfm-tool hloc --refine-pixsfm --use-sfm-depth --matching-method ${methods[$idx]}
 
     mod_path=${output_folder}${folder}/
-    to_rm=("images_8" "colmap" "depth" "depths_2" "depths_4" "depths_8")
+    to_rm=("images_8" "depth" "depths_2" "depths_4" "depths_8")
     # 删除所有 depths 文件夹
     for target in ${to_rm[@]}; do
         if [ -d ${mod_path}${target} ]; then

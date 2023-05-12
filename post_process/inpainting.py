@@ -1,13 +1,13 @@
 import os
-import cv2
-import numpy as np
-from tqdm import tqdm
-from PIL import Image
 import sys
 
+import cv2
+import numpy as np
 from modelscope.outputs import OutputKeys
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
+from PIL import Image
+from tqdm import tqdm
 
 inpainting = pipeline(Tasks.image_inpainting, model='damo/cv_fft_inpainting_lama', refine=True)
 all_scenes = ['DayaTemple', 'HaiyanHall', 'Library', 'MemorialHall', 'Museum', 'PeonyGarden', 'ScienceSquare', 'theOldGate']
@@ -17,8 +17,8 @@ scene_id = int(sys.argv[1])
 scale_rate = 4
 scene_name = all_scenes[scene_id]
 
-renders_path = "../renders"
-result_path = "."
+renders_path = "./renders"
+result_path = "./post_process/"
 
 def load_image(imfile, factor=1):
     img = np.array(Image.open(imfile)).astype(np.uint8)

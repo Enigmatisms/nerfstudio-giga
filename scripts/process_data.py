@@ -14,16 +14,10 @@ import tyro
 from rich.console import Console
 from typing_extensions import Annotated, Literal
 
-from nerfstudio.process_data import (
-    colmap_utils,
-    equirect_utils,
-    hloc_utils,
-    metashape_utils,
-    polycam_utils,
-    process_data_utils,
-    realitycapture_utils,
-    record3d_utils,
-)
+from nerfstudio.process_data import (colmap_utils, equirect_utils, hloc_utils,
+                                     metashape_utils, polycam_utils,
+                                     process_data_utils, realitycapture_utils,
+                                     record3d_utils)
 from nerfstudio.process_data.process_data_utils import CAMERA_MODELS
 from nerfstudio.utils import install_checks
 
@@ -47,9 +41,12 @@ class ProcessImages:
     """Path to the output directory."""
     camera_type: Literal["perspective", "fisheye", "equirectangular"] = "perspective"
     """Camera model to use."""
-    matching_method: Literal["exhaustive", "sequential", "vocab_tree"] = "vocab_tree"
-    """Feature matching method to use. Vocab tree is recommended for a balance of speed and
-        accuracy. Exhaustive is slower but more accurate. Sequential is faster but should only be used for videos."""
+    matching_method: Literal["exhaustive", "sequential", "vocab_tree", "poses"] = "vocab_tree"
+    """Feature matching method to use. Vocab tree is recommended for a balance of speed
+    and accuracy. Exhaustive is slower but more accurate. Sequential is faster but
+    should only be used for videos."""
+    num_matched: int = 20
+    """Max feature matching pairs num."""
     sfm_tool: Literal["any", "colmap", "hloc"] = "any"
     """Structure from motion tool to use. Colmap will use sift features, hloc can use many modern methods
        such as superpoint features and superglue matcher"""
@@ -234,9 +231,11 @@ class ProcessImages:
                 camera_model=CAMERA_MODELS[self.camera_type],
                 verbose=self.verbose,
                 matching_method=self.matching_method,
+                num_matched=self.num_matched,
                 feature_type=feature_type,
                 matcher_type=matcher_type,
                 refine_pixsfm=self.refine_pixsfm,
+                poses_file = self.output_dir / "train.json"
             )
         else:
             CONSOLE.log("[bold red]Invalid combination of sfm_tool, feature_type, and matcher_type, exiting")

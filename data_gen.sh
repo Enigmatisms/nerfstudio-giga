@@ -10,10 +10,11 @@ set -e
 # ./ffmpeg_scale.sh $1
 
 # # 根据 cam.txt 生成训练 json
-# # QUITE
+# # TODO: QUITE
 # echo "[INFO] generate_train_test.sh: Generating json files..."
 # # $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）主要使用 cam/ 文件夹
-# ./generate_train_test.sh $1
+# # $2: 我们需要将 train/test.json 先行复制到 dataset 输出文件夹中
+# ./generate_train_test.sh $1 $2
 
 # # HLOC 位姿计算
 # echo "[INFO] hloc_pose_gen.sh: HLOC, two processes, pose refinement..."
@@ -48,13 +49,15 @@ set -e
 #     mkdir -p $2
 # fi
 
-# # HLOC 将会生成 4种分辨率的图片，我们只留1/4分辨率图像
-# # Version (测试用): 单进程
-# ./hloc_pose_gen1.sh $1 $2
-# ./hloc_pose_gen2.sh $1 $2
-# echo "[INFO] HLOC completed."
+# HLOC 将会生成 4种分辨率的图片，我们只留1/4分辨率图像
+# Version (测试用): 单进程
+./hloc_pose_gen1.sh $1 $2
 
-# echo "[INFO] hloc_pose_replace.sh: HLOC poses are being replaced..."
+# TODO: FIXME 
+# ./hloc_pose_gen2.sh $1 $2
+echo "[INFO] HLOC completed."
+
+echo "[INFO] hloc_pose_replace.sh: HLOC poses are being replaced..."
 
 # HLOC 位姿替换
 # $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）
@@ -67,7 +70,13 @@ echo "[INFO] HLOC dataset without depth completed"
 
 # 基本数据集的生成到此结束 --- IGEV 进一步处理数据集将在外部进行
 
-# TODO: 此后的步骤
+# data_gen.sh 到 train_phase 还差的环节
+# (1) HLOC 的调整
+# (2) IGEV 深度图 与 sky_masking 的生成
+# train_phase 中的重要一步： 重投影对应的 inpainting
+# 另外：verbose 等级 / 多卡训练需要开启
+
+# 此后的步骤
 # 假设我们已经有了各种训练所需的内容，首先就是要完成训练
 # 第一个需要完成的训练是7个no_skew场景的训练
 # 训练结束后，使用 run_icp.sh 生成对应的 output_no_skew.json 进行渲染（只渲染七个场景）

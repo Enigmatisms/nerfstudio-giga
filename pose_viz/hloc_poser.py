@@ -3,7 +3,8 @@ import os
 
 import configargparse
 import numpy as np
-
+from copy import deepcopy
+from pathlib import Path
 
 def get_idx(path: str):
     return int(path[path.find("_")+1:path.find(".")])
@@ -17,6 +18,8 @@ def parser_opts():
     parser.add_argument("-m", "--merge",        default = False, action = "store_true", help = "whether to merge train / test dataset")
     parser.add_argument("-t", "--transform",    default = False, action = "store_true", help = "Whether to cancel out the applied transform")
     parser.add_argument("-n", "--no_skew",      default = False, action = "store_true", help = "Whether to use skews in the transform.json")
+    parser.add_argument("--skip",               default = False, action = "store_true", help = "Whether to skip generating train embedded json (for DayaTemple)")
+    parser.add_argument("--overwrite",          default = False, action = "store_true", help = "Whether to enable overwriting")
     parser.add_argument("--scale",              default = 1.0, help = "Scale intrinsic and image wh (if HLOC uses half resolution images)", type=float)
     return parser.parse_args()
 
@@ -39,6 +42,26 @@ if __name__ == "__main__":
         to_scale = ("w", "h", "fl_x", "fl_y", "cx", "cy")
         for item in to_scale:
             after_data[item] *= opts.scale
+    # preprocess
+
+    should_overwrite = False
+    for frame in after_data["frames"]:
+        depth_file_path = frame["depth_file_path"]
+        if not depth_file_path.endswith(".pfm"):
+            main_part = Path(depth_file_path).stem
+            frame["depth_file_path"] = f"depths/{main_part}.pfm"
+            should_overwrite = True
+
+    if should_overwrite and opts.overwrite:
+        # DayaTemple transform 需要放大一倍
+        if "overwritten" not in after_data:     # 防止二次 scaling 与处理
+            after_data["overwritten"] = True
+            with open(colmap_path, "w") as file:
+                json.dump(after_data, file, indent = 4)
+
+    if opts.skip:
+        exit(0)
+
     frames = {get_idx(frame["file_path"]):frame for frame in after_data["frames"]}
     test_views = []
     for frame in train_data["frames"]:
