@@ -1,10 +1,11 @@
 import json
 import os
+from copy import deepcopy
+from pathlib import Path
 
 import configargparse
 import numpy as np
-from copy import deepcopy
-from pathlib import Path
+
 
 def get_idx(path: str):
     return int(path[path.find("_")+1:path.find(".")])
@@ -38,7 +39,9 @@ if __name__ == "__main__":
         train_data = json.load(file)
     with open(colmap_path, "r") as file:
         after_data = json.load(file)
-    if opts.scale > 1.1:
+
+    # for json file of which the intrinsic is already modified, skip intrinsic scaling
+    if opts.scale > 1.1 and "overwritten" not in after_data:
         to_scale = ("w", "h", "fl_x", "fl_y", "cx", "cy")
         for item in to_scale:
             after_data[item] *= opts.scale
@@ -58,7 +61,6 @@ if __name__ == "__main__":
             after_data["overwritten"] = True
             with open(colmap_path, "w") as file:
                 json.dump(after_data, file, indent = 4)
-
     if opts.skip:
         exit(0)
 

@@ -15,13 +15,15 @@ for idx in ${opt_ids[@]}; do
         --sfm-tool hloc --refine-pixsfm --use-sfm-depth
 
     mod_path=${output_folder}${folder}/
-    to_rm=("images_8" "colmap" "depth" "depths_2" "depths_4" "depths_8")
+    to_rm=("images_8" "depth" "depths_2" "depths_4" "depths_8")
     # 删除所有 depths 文件夹
     for target in ${to_rm[@]}; do
         if [ -d ${mod_path}${target} ]; then
             rm -r ${mod_path}${target}
         fi
     done
+    # 此文件 （s2dnet*）过于巨大，貌似也没有被使用，直接删除
+    rm ${mod_path}colmap/sparse/**/s2dnet*
     if [ ! -d ${mod_path}depths/ ]; then
         mkdir -p ${mod_path}depths/
     fi

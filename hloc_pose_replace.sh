@@ -12,13 +12,13 @@ for idx in ${opt_ids[@]}; do
     input_path=$input_folder$scene/
     output_path=$output_folder$scene/
     python3 ./pose_viz/hloc_poser.py -i $output_path --merge -o "transforms_colmap.json" --outpath $output_path  --scale 2.0 --overwrite               # 保留原本的 transforms.json
-    python3 ./pose_viz/hloc_poser.py -i $output_path --merge --no_skew -o "transforms_no_skew.json" --outpath $output_path --scale 2.0   # 生成 纯原始位姿 + 纯原始内参 json
+    python3 ./pose_viz/hloc_poser.py -i $output_path --merge --no_skew -o "transforms_no_skew.json" --outpath $output_path   # 生成 纯原始位姿 + 纯原始内参 json
     # 复制相关 json 到我们构建数据集的位置
 done
 
 # theOldGate 需要将其 applied transform 去掉 （theOldGate 位姿有一定特殊性）
 python3 ./pose_viz/hloc_poser.py -i ${output_folder}theOldGate --transform --merge -o "transforms_colmap.json" --outpath ${output_folder}theOldGate/ --scale 2.0 --overwrite
-python3 ./pose_viz/hloc_poser.py -i ${output_folder}theOldGate --transform --merge --no_skew -o "transforms_no_skew.json" --outpath ${output_folder}theOldGate/ --scale 2.0
+python3 ./pose_viz/hloc_poser.py -i ${output_folder}theOldGate --transform --merge --no_skew -o "transforms_no_skew.json" --outpath ${output_folder}theOldGate/
 
 # DayaTemple 没有 train test 合并，并且不需要替换位姿 (但是必须 overwrite 此前的内参，因为缩小了1/2)
 
