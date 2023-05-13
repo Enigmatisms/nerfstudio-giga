@@ -77,6 +77,8 @@ if __name__ == "__main__":
             np_mat = np.float32(matrix)
             np_mat[:3, :3] = np_mat[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
             matrix = np_mat.tolist()
+        # Note that in the lastest version, where we skipped 00058(frame_49) in the first place
+        # We might not need to skip anything later
         # Note that for library, there is no 49, therefore the images after 49 will have id mismatch
         # which can be a big problem, therefore we should double check the frame in frames of index [idx - 1]
         # if idx matches, we replace transform matrix, otherwise we might need to insert a frame here

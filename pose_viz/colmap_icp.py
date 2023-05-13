@@ -190,8 +190,6 @@ def main_output(opts):
         tr_matrix = np.float32(frame1['transform_matrix'])
         if opts.transform:
             tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-        if opts.scene_name == 'Library' and ('49' in frame1['file_path']):
-            continue
         matrix1 = transform_scale(scale, avg_trans, tr_matrix)
         data_trans.append(matrix1[0:3, 3:4])
         data_trans_m.append(matrix1)

@@ -1,6 +1,5 @@
 dataset_path=$1
-files=("haiyan_hall" "library" "memorial_hall" "museum" "peony_garden" "science_square")
-
+files=("library" "memorial_hall" "museum" "peony_garden" "science_square")
 ## 两个进程用于训练七个场景的 原始位姿 + 原始内参 版本 (多卡可用)
 # pids=(0 0 0)
 # for ((i=0;i<3;i++)); do
@@ -11,11 +10,11 @@ files=("haiyan_hall" "library" "memorial_hall" "museum" "peony_garden" "science_
 # done
 
 for scene in ${files[@]}; do
-    CUDA_VISIBLE_DEVICES=0 ./config_no_skew/$scene.sh $dataset_path _no_skew
+    CUDA_VISIBLE_DEVICES=0 ./config_no_skew/$scene.sh $dataset_path
 done
 
 echo "[TRAIN NOSKEW] ./config_no_skew/the_old_gate started to run..." 
-CUDA_VISIBLE_DEVICES=0 ./config_no_skew/the_old_gate.sh $dataset_path _no_skew
+CUDA_VISIBLE_DEVICES=0 ./config_no_skew/the_old_gate.sh $dataset_path
 echo "[TRAIN NOSKEW] ./config_no_skew/the_old_gate completed" 
 
 # for pid in ${pids[@]}; do
