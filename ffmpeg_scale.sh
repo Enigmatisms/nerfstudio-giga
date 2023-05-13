@@ -6,8 +6,7 @@ fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
 transpose=(0 0 0 0 0 0 0 1)
-# opt_ids=(0 1 2 3 4 5 6 7)
-opt_ids=(7)
+opt_ids=(0 1 2 3 4 5 6 7)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     scale_folder=$input_folder$folder/images_scaled

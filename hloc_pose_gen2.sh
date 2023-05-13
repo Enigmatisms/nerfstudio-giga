@@ -12,7 +12,7 @@ for idx in ${opt_ids[@]}; do
     CUDA_VISIBLE_DEVICES=0 ns-process-data images \
         --data $input_folder$folder/images_scaled/ \
         --output-dir $output_folder$folder/ \
-        --sfm-tool hloc --refine-pixsfm --use-sfm-depth
+        --sfm-tool hloc --use-sfm-depth
 
     mod_path=${output_folder}${folder}/
     to_rm=("images_8" "depth" "depths_2" "depths_4" "depths_8")
