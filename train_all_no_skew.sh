@@ -1,5 +1,5 @@
 dataset_path=$1
-files=("library" "memorial_hall" "museum" "peony_garden" "science_square")
+files=("haiyan_hall" "library" "memorial_hall" "museum" "peony_garden" "science_square")
 ## 两个进程用于训练七个场景的 原始位姿 + 原始内参 版本 (多卡可用)
 # pids=(0 0 0)
 # for ((i=0;i<3;i++)); do

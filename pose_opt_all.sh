@@ -14,7 +14,7 @@ for idx in ${opt_ids[@]}; do
     opt_mode=${opt_modes[$idx]}
     image_num=${image_nums[$idx]}
     CUDA_VISIBLE_DEVICES=0 ns-train depth-nerfacto \
-        --data ${data_set_path}${folder}_opt/transforms_opt.json \
+        --data ${data_set_path}${folder}_opt/transforms${opt_mode}_opt.json \
         --load-dir ./outputs/$folder/depth-nerfacto/${folder}${opt_mode}/nerfstudio_models/ \
         --timestamp ${folder} \
         --logging.local-writer.max-log-size 10 \
@@ -37,9 +37,9 @@ for idx in ${opt_ids[@]}; do
         --pipeline.datamanager.camera-optimizer.intrinsic-opt ${int_mode[$idx]} \
         --pipeline.datamanager.camera-optimizer.distortion-opt ${int_mode[$idx]} \
         --pipeline.datamanager.camera-optimizer.scheduler.lr-final 5e-5 \
-        --pipeline.datamanager.camera-optimizer.scheduler.max-steps 9000 \
+        --pipeline.datamanager.camera-optimizer.scheduler.max-steps 2000 \
         --pipeline.datamanager.transform_path ./outputs/$folder/depth-nerfacto/${folder}${opt_mode}/dataparser_transforms.json \
-        --max-num-iterations 12000
+        --max-num-iterations 3000
 done
 
 echo "[POSE OPT] Test view pose optimizatin completed."

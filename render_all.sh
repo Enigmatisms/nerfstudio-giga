@@ -11,7 +11,7 @@ modes=("" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap")
 # done
 
 echo "[RENDER MODEL] full model rendering started."
-for ((i=0;i<7;i++)); do
+for ((i=0;i<8;i++)); do
     folder=${folders[$i]}
     mode=${modes[$i]}
     # 需要使用 _opt 作为后缀，因为我们使用进行了位姿 + 内参优化的结果进行渲染

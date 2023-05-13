@@ -8,7 +8,7 @@ set -e
 # 首先，训练1/8分辨率的位姿配准结果并渲染
 echo "Outer dataset path: $1"
 echo "[INFO] Training 1/8 resolution models for pose optimization."
-./train_all_no_skew.sh $1
+# ./train_all_no_skew.sh $1
 echo "[INFO] Training 1/8 resolution models completed."
 # 训练完渲染，结果暂存在 renders 文件夹中
 
@@ -16,11 +16,11 @@ echo "[INFO] Training 1/8 resolution models completed."
 # 生成 output_no_skew.json
 # 最后一个参数为 process_daya, 设为 false
 echo "[INFO] Generating output.json for no_skew"
-./output_json_gen.sh $1 _no_skew 0.125 0
+# ./output_json_gen.sh $1 _no_skew 0.125 0
 echo "[INFO] Generating output_no_skew.json generated."
 
 echo "[INFO] Rendering 1/8 resolution models..."
-./render_all_no_skew.sh $1
+# ./render_all_no_skew.sh $1
 echo "[INFO] Rendering 1/8 resolution models completed."
 
 # 训练实际的 model，此model训练完后其实已经有结果的模型以供 ns-viewer 进行查看了

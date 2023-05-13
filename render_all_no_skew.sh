@@ -1,5 +1,5 @@
 dataset_path=$1
-folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
+folders=("theOldGate")
 
 # # 四个进程用于渲染7个场景的 1/8 分辨率权限
 # pids=(0 0 0)

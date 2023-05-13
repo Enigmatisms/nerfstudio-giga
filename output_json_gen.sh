@@ -23,7 +23,7 @@ for folder in ${folders[@]}; do
 done
 
 # theOldGate 单独处理
-python3 ./pose_viz/colmap_icp.py --input_path ../../dataset/ \
+python3 ./pose_viz/colmap_icp.py --input_path $dataset_path \
         --scene_name theOldGate --output_name "output${mode}.json" \
         --colmap_name transforms${mode}.json \
         --parser_name ./outputs/theOldGate/depth-nerfacto/theOldGate${mode}/dataparser_transforms.json \
@@ -31,9 +31,10 @@ python3 ./pose_viz/colmap_icp.py --input_path ../../dataset/ \
 
 # DayaTemple无需渲染训练位姿优化图，故只需要一次
 if [ $process_daya -gt 0 ]; then
-    python3 ./pose_viz/colmap_icp.py --input_path ../../dataset/ \
+    echo "Processing DayaTemple."
+    python3 ./pose_viz/colmap_icp.py --input_path $dataset_path \
         --scene_name DayaTemple --output_name "output.json" \
         --colmap_name transforms.json \
         --parser_name ./outputs/DayaTemple/depth-nerfacto/DayaTemple/dataparser_transforms.json \
-        --scale $scale --invalid_th 1 --icp_th 1 --decay 0.2 -o
+        --scale $scale --invalid_th 100 --icp_th 2 --decay 0.4 -o
 fi

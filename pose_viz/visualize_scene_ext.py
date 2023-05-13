@@ -85,6 +85,8 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', 
     check_set = set(int(name[:-4]) for name in all_imgs)
     H, W, _ = example_img.shape
     scaled_h, scaled_w = H, W
+    if scene_name == "theOldGate" and scaled_h < scaled_w:
+        scaled_w, scaled_h = scaled_h, scaled_w
     if scale < 9.9e-1:
         scaled_h, scaled_w = int(H * scale), int(W * scale)
         num_images = len(all_imgs)
