@@ -4,20 +4,20 @@ set -e
 
 # FIXME: 所有 shell 脚本的参数没有设置
 
-# # 生成一倍降采样图像用于 HLOC 计算位姿与内参
-# echo "[INFO] ffmpeg_scale.sh: Scaling images..."
-# # $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）主要使用 images/ 文件夹
-# ./ffmpeg_scale.sh $1
+# 生成一倍降采样图像用于 HLOC 计算位姿与内参
+echo "[INFO] ffmpeg_scale.sh: Scaling images..."
+# $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）主要使用 images/ 文件夹
+./ffmpeg_scale.sh $1
 
-# # 根据 cam.txt 生成训练 json
-# # TODO: QUITE
-# echo "[INFO] generate_train_test.sh: Generating json files..."
-# # $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）主要使用 cam/ 文件夹
-# # $2: 我们需要将 train/test.json 先行复制到 dataset 输出文件夹中
-# ./generate_train_test.sh $1 $2
+# 根据 cam.txt 生成训练 json
+# TODO: QUITE
+echo "[INFO] generate_train_test.sh: Generating json files..."
+# $1: 原始数据集的位置（此目录下应该有 DayaTemple, HaiyanHall, ...）主要使用 cam/ 文件夹
+# $2: 我们需要将 train/test.json 先行复制到 dataset 输出文件夹中
+./generate_train_test.sh $1 $2
 
-# # HLOC 位姿计算
-# echo "[INFO] hloc_pose_gen.sh: HLOC, two processes, pose refinement..."
+# HLOC 位姿计算
+echo "[INFO] hloc_pose_gen.sh: HLOC, two processes, pose refinement..."
 
 # # [UNIT TEST-1]: 生成原始数据集
 # 两个进程跑 HLOC 位姿计算，考虑到有多 GPU，但尚不清楚 CPU/内存的占用 --- TODO: 此处或许可以激进一些
@@ -52,9 +52,7 @@ set -e
 # HLOC 将会生成 4种分辨率的图片，我们只留1/4分辨率图像
 # Version (测试用): 单进程
 ./hloc_pose_gen1.sh $1 $2
-
-# TODO: FIXME 
-# ./hloc_pose_gen2.sh $1 $2
+./hloc_pose_gen2.sh $1 $2
 echo "[INFO] HLOC completed."
 
 echo "[INFO] hloc_pose_replace.sh: HLOC poses are being replaced..."
@@ -69,6 +67,9 @@ echo "[INFO] HLOC pose replacing completed."
 echo "[INFO] HLOC dataset without depth completed"
 
 # 基本数据集的生成到此结束 --- IGEV 进一步处理数据集将在外部进行
+
+
+# TODO: datagen 还有需要修改的地方: 生成 IGEV/sky-mask/reprojection-inpainting 所需要的结果
 
 # data_gen.sh 到 train_phase 还差的环节
 # (1) HLOC 的调整

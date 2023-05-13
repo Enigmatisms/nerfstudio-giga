@@ -43,6 +43,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
+    --pipeline.model.use-average-appearance-embedding False \
     --vis viewer+tensorboard \
     --max-num-iterations 30000
 
@@ -83,6 +84,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
     --viewer.quit-on-train-completion True \
+    --pipeline.model.use-average-appearance-embedding False \
     --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \

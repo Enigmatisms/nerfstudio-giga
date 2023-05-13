@@ -6,7 +6,7 @@ if [ ! -d $input_folder ]; then
 fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
-opt_ids=(2 0)
+opt_ids=(2 0 1 3)
 methods=("poses" "vocab_tree" "poses" "vocab_tree")
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
@@ -23,6 +23,8 @@ for idx in ${opt_ids[@]}; do
             rm -r ${mod_path}${target}
         fi
     done
+    # 此文件 （s2dnet*）过于巨大，貌似也没有被使用，直接删除
+    rm ${mod_path}colmap/sparse/**/s2dnet*
     if [ ! -d ${mod_path}depths/ ]; then
         mkdir -p ${mod_path}depths/
     fi
