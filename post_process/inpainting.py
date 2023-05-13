@@ -17,8 +17,8 @@ scene_id = int(sys.argv[1])
 scale_rate = 4
 scene_name = all_scenes[scene_id]
 
-renders_path = "./renders"
-result_path = "./post_process/"
+renders_path = "./renders" if len(sys.argv) < 3 else sys.argv[2]
+result_path = "./post_process/" if len(sys.argv) < 4 else sys.argv[3]
 
 def load_image(imfile, factor=1):
     img = np.array(Image.open(imfile)).astype(np.uint8)
