@@ -334,6 +334,10 @@ class RenderTrajectory:
     """Specifies number of rays per chunk during eval."""
     original_img_num: Optional[int] = None
     """Number of original images (for train / test merged dataset)."""
+    near_plane: float = 0.0
+    """Near plane of rendering the results"""
+    render_sample_num: int = 192
+    """Rendering sample num"""
 
     def main(self) -> None:
         """Main function."""
@@ -382,6 +386,10 @@ class RenderTrajectory:
             )
         else:
             assert_never(self.traj)
+
+        pipeline.model.collider.near_plane = self.near_plane
+        pipeline.model.proposal_sampler.num_nerf_samples_per_ray = self.render_sample_num
+        pipeline.model.config.num_nerf_samples_per_ray = self.render_sample_num
 
         _render_trajectory_video(
             pipeline,

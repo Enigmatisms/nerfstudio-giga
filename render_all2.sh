@@ -11,7 +11,7 @@ image_nums=(83 25 53 17 54 42 32 47)
 # done
 
 echo "[RENDER MODEL] full model rendering started."
-for ((i=0;i<4;i++)); do
+for ((i=4;i<8;i++)); do
     folder=${folders[$i]}
     mode=${modes[$i]}
     img_num=${image_nums[$i]}
@@ -19,6 +19,8 @@ for ((i=0;i<4;i++)); do
     CUDA_VISIBLE_DEVICES=1 ./render_one.sh ${folder} $dataset_path $mode 0.0 192 $img_num _opt
 done
 
+# extended rendering near-far plane
+CUDA_VISIBLE_DEVICES=1 ./render_one.sh PeonyGarden $dataset_path _colmap 0.4 192 42 _replace
 # for pid in ${pids[@]}; do
 #     wait $pid
 # done

@@ -1,6 +1,6 @@
 dataset_path=$1
 folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
-
+image_nums=(25 53 17 54 42 32 47)
 # # 四个进程用于渲染7个场景的 1/8 分辨率权限
 # pids=(0 0 0)
 # for ((i=0;i<3;i++)); do
@@ -11,8 +11,10 @@ folders=("HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSq
 # done
 
 echo "[RENDER NOSKEW] no skew model rendering started."
-for folder in ${folders[@]}; do
-    CUDA_VISIBLE_DEVICES=0 ./render_one.sh ${folder} $dataset_path _no_skew
+for ((i=0;i<7;i++)); do
+    folder=${folders[$i]}
+    img_num=${image_nums[$i]}
+    CUDA_VISIBLE_DEVICES=1 ./render_one.sh ${folder} $dataset_path _no_skew 0.1 128 $img_num
 done
 
 # for pid in ${pids[@]}; do

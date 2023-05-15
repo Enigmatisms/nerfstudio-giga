@@ -8,7 +8,7 @@ set -e
 # 首先，训练1/8分辨率的位姿配准结果并渲染
 echo "Outer dataset path: $1"
 echo "[INFO] Training 1/8 resolution models for pose optimization."
-./train_all_no_skew.sh $1
+# ./train_all_no_skew.sh $1
 echo "[INFO] Training 1/8 resolution models completed."
 # 训练完渲染，结果暂存在 renders 文件夹中
 
@@ -16,16 +16,20 @@ echo "[INFO] Training 1/8 resolution models completed."
 # 生成 output_no_skew.json
 # 最后一个参数为 process_daya, 设为 false
 echo "[INFO] Generating output.json for no_skew"
-./output_json_gen.sh $1 _no_skew 0.125 0
+# ./output_json_gen.sh $1 _no_skew 0.125 0
 echo "[INFO] Generating output_no_skew.json generated."
 
 echo "[INFO] Rendering 1/8 resolution models..."
-./render_all_no_skew.sh $1
+# ./render_all_no_skew.sh $1
 echo "[INFO] Rendering 1/8 resolution models completed."
 
 # 训练实际的 model，此model训练完后其实已经有结果的模型以供 ns-viewer 进行查看了
 echo "[INFO] Traning model..."
 ./train_all.sh $1
+# pid_model=$!
+./train_all2.sh $1
+# wait $pid_model
+
 echo "[INFO] Traning model completed."
 
 # TODO: 生成位姿配准数据集，此时dayatemple需要处理，故设为 1
@@ -43,6 +47,9 @@ echo "[INFO] Camera test view optimization dataset completed."
 # 3. 测试位姿优化的训练
 echo "[INFO] Pose optimization started."
 ./pose_opt_all.sh $1
+# pid_pose=$!
+./pose_opt_all2.sh $1
+# wait $pid_pose
 echo "[INFO] Pose optimization completed."
 
 # 4. pose_replacer 得到 output_xxxx_opt.json
@@ -50,5 +57,6 @@ echo "[INFO] Pose optimization completed."
 
 echo "[INFO] Pose placing started."
 ./opt_pose_replacer.sh $1
+python3 ./pose_viz/peony_poser.py --input_path ${1}PeonyGarden/
 echo "[INFO] Pose placing completed."
 echo "[INFO] Training completed."

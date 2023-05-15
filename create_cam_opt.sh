@@ -12,11 +12,10 @@ for folder in ${folders[@]}; do
 done
 
 # 当前在 code/nerfstudio/下, 将 daya_ngp_samples 中的图像复制到 Daya_opt 中用作位姿优化
-# 此处并不违反规则，详情请见我们的README 1.5
 if [ ! -d ./renders/DayaTemple/ ]; then
     mkdir -p ./renders/DayaTemple/
 fi
-cp ../../data/user_data/public_data/daya_ngp_samples/* ./renders/DayaTemple/
+cp ../../data/user_data/other_data/daya_ngp_samples/* ./renders/DayaTemple/
 
 # 输出将会是 transforms_opt.json
 python3 ./pose_viz/camera_opt.py -i DayaTemple -m none \

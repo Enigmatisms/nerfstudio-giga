@@ -8,7 +8,7 @@ image_nums=(83 25 53 17 54 42 32 47)
 int_mode=("off" "fixed" "fixed" "fixed" "fixed" "off" "fixed" "fixed")
 opt_modes=("" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap" "_colmap")
 
-opt_ids=(0 1 2 3)
+opt_ids=(4 5 6 7)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
     opt_mode=${opt_modes[$idx]}

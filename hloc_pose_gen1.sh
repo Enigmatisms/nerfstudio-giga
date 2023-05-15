@@ -6,14 +6,15 @@ if [ ! -d $input_folder ]; then
 fi
 
 folders=("DayaTemple" "HaiyanHall" "Library" "MemorialHall" "Museum" "PeonyGarden" "ScienceSquare" "theOldGate")
-opt_ids=(2 0 1 3)
+opt_ids=(0 1 2 3)
 methods=("poses" "vocab_tree" "poses" "vocab_tree")
+match_num=(20 50 20 50)
 for idx in ${opt_ids[@]}; do
     folder=${folders[$idx]}
-    CUDA_VISIBLE_DEVICES=0 ns-process-data images \
+    CUDA_VISIBLE_DEVICES=1 ns-process-data images \
         --data $input_folder$folder/images_scaled/ \
         --output-dir $output_folder$folder/ \
-        --sfm-tool hloc --use-sfm-depth --matching-method ${methods[$idx]}
+        --sfm-tool hloc --use-sfm-depth --refine-pixsfm --matching-method ${methods[$idx]} --num-matched ${match_num[$idx]}
 
     mod_path=${output_folder}${folder}/
     to_rm=("images_8" "depth" "depths_2" "depths_4" "depths_8")
