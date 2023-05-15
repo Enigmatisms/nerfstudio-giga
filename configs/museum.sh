@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="museum${2}"
-full_res_name="Museum${2}_high"
+file_name="transforms_colmap"
+folder_name="museum"
+full_res_name="Museum_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/Museum/$file_name.json \

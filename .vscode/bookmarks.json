@@ -59,7 +59,7 @@
 			"path": "scripts/process_data.py",
 			"bookmarks": [
 				{
-					"line": 220,
+					"line": 214,
 					"column": 35,
 					"label": "Process data colmap call"
 				}

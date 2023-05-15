@@ -51,9 +51,9 @@ def icpIter(data, gt, rot, trans, threshold: float, verbose: bool = False):
         print("Set a bigger threshold / make the threshold decay slower")
         raise ValueError("Invalid result with valid cnt = 0")
 
-def icp(data, gt):
+def icp(data, gt, decay_rate = 0.9, icp_threshold = 100):
     # for DayaTemple: threshold 2 and max_dist decay should be 0.2 (small), HaiyanHall decay should be big
-    threshold = 100
+    threshold = icp_threshold
     scale = 1.0
     rot = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
     trans = np.zeros((3, 1))
@@ -63,7 +63,7 @@ def icp(data, gt):
         scale = scale * scale1
         rot = rot1 @ rot
         trans = rot1 @ trans + trans1
-        threshold = max_dist * 0.9
+        threshold = max_dist * decay_rate
         cnt += 1
     result = np.zeros((4, 4), dtype = float)
     result[0:3, 0:3] = rot
@@ -129,12 +129,13 @@ def parser_opts():
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("--input_path",      required = True, help = "Input scene file folder", type = str)
     parser.add_argument("--scene_name",      required = True, help = "Input scene name", type = str)
+    parser.add_argument("--parser_name",     required = True, help = "Scale and transform filename", type = str)
     parser.add_argument("--origin_name",     default = "train.json", help = "Input original pose json file name", type = str)
-    parser.add_argument("--parser_name",     default = "dataparser_transforms.json", help = "Scale and transform filename", type = str)
     parser.add_argument("--colmap_name",     default = "transforms_new.json", help = "Input colmap pose json file name", type = str)
     parser.add_argument("--eval_name",       default = "test.json", help = "Eval pose json file name", type = str)
     parser.add_argument("--output_name",     default = "output.json", help = "Output pose json file name", type = str)
     parser.add_argument("--scale",           default = 1, help = "Scale camera intrinsics", type = float)
+    parser.add_argument("--decay",           default = 0.9, help = "Decay rate of the threshold.", type = float)
     parser.add_argument("--train",      default = False, action = "store_true", help = "Whether to generate transformed train views.")
     parser.add_argument("-v", "--visualize", default = False, action = "store_true", help = "Whether to visualize result")
     parser.add_argument("-o", "--origin_pose", default = False, action = "store_true", help = "Whether to use original poses")
@@ -142,14 +143,15 @@ def parser_opts():
 
     # For pose registration
     parser.add_argument("--invalid_th", default = 0.2, help = "Threshold for invalid pose alignment: bigger - fewer modifications to COLMAP pose", type = float)
+    parser.add_argument("--icp_th",     default = 100, help = "Threshold for ICP", type = float)
     return parser.parse_args()
 
 def main_output(opts):
     origin_path = os.path.join(opts.input_path, opts.scene_name, opts.origin_name)
     colmap_path = os.path.join(opts.input_path, opts.scene_name, opts.colmap_name)
     eval_path   = os.path.join(opts.input_path, opts.scene_name, opts.eval_name)
-    parse_path  = os.path.join(opts.input_path, opts.scene_name, opts.parser_name)
     output_path = os.path.join(opts.input_path, opts.scene_name, opts.output_name)
+    parse_path  = opts.parser_name
 
     with open(origin_path,'r')as f:     # original json file
         origin_data = json.load(f)
@@ -178,7 +180,7 @@ def main_output(opts):
         else:
             print(f"{Fore.YELLOW}Warning, '{frame1['file_path']}' not exist in the COLMAP pose.{Style.RESET_ALL}")
 
-    scale, avg_trans, colors1, colors2 = icp(data, gt)
+    scale, avg_trans, colors1, colors2 = icp(data, gt, opts.decay, opts.icp_th)
     print(f"Scale: {scale}")
     print(f"Average translation: {avg_trans}")
 
@@ -188,8 +190,6 @@ def main_output(opts):
         tr_matrix = np.float32(frame1['transform_matrix'])
         if opts.transform:
             tr_matrix[:3, :3] = tr_matrix[:3, :3] @ np.float32([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-        if opts.scene_name == 'Library' and ('49' in frame1['file_path']):
-            continue
         matrix1 = transform_scale(scale, avg_trans, tr_matrix)
         data_trans.append(matrix1[0:3, 3:4])
         data_trans_m.append(matrix1)

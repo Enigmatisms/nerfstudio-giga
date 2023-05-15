@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="old_gate${2}"
-full_res_name="theOldGate${2}_high"
+file_name="transforms_colmap"
+folder_name="old_gate"
+full_res_name="theOldGate_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/theOldGate/$file_name.json \

@@ -16,9 +16,10 @@ def parser_opts():
     parser.add_argument("-n", "--input_name",       required = True, help = "Input name", type = str)
     parser.add_argument("-m", "--mode",             required = True, choices = ["none", "colmap", "new", "no_skew"], 
                         help = "Input modes to choose from.", type = str)
-    parser.add_argument("-i", "--input_path",       default = "../outputs/", help = "Input name", type = str)
-    parser.add_argument("-o", "--output_json_path", default = "../../dataset/images_and_cams/full/", 
+    parser.add_argument("-o", "--output_json_path", required = True,
                         help = "Input pose and camera intrinsics file.", type = str)
+    
+    parser.add_argument("-i", "--input_path",       default = "./outputs/", help = "Input name", type = str)
     parser.add_argument("--scale",                  default = 1.0, help = "Intrinsic scaling factor.", type = float)
     return parser.parse_args()
 
@@ -44,8 +45,13 @@ if __name__ == "__main__":
     intrinsic_exist = False
     for i in range(template_pose_num):
         pose_frame = opt_poses["frames"][i]
-        template["camera_path"][i]["camera_to_world"] = \
-            pose_frame["camera_to_world"]
+        if (truncate_scene == "DayaTemple" and template["camera_path"][i]["original_name"] == "00000024_cam.txt") or \
+           (truncate_scene == "PeonyGarden" and template["camera_path"][i]["original_name"] == "00000006_cam.txt"):
+            # manually skip some of the cases (since the images are blurred)
+            pass
+        else:
+            template["camera_path"][i]["camera_to_world"] = \
+                pose_frame["camera_to_world"]
         if "fx" in pose_frame:
             intrinsic_exist = True
             template["camera_path"][i]["fx"] = pose_frame["fx"] * opts.scale

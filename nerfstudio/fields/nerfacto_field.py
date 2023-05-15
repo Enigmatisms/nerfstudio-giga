@@ -299,9 +299,11 @@ class TCNNNerfactoField(Field):
                     (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
                 ) * self.embedding_appearance.mean(dim=0)
             else:
-                embedded_appearance = torch.zeros(
-                    (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
-                )
+                # Qianyue He's note: I do not allow zero embedding, NN-appearance embedding is only used
+                # in PeonyGarden
+                embedded_appearance = 0.75 * self.embedding_appearance(camera_indices) + \
+                    0.25 * torch.ones((*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
+                    ) * self.embedding_appearance.mean(dim=0)
 
         # transients
         # TODO: it seems that we are not calculating transient embedding?

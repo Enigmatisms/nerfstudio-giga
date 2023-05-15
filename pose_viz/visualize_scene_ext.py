@@ -14,8 +14,6 @@ import natsort
 import numpy as np
 import tqdm
 
-secondary_outpath = "../../dataset/images_and_cams/full/"
-
 def folder_path(path: str, comment: str = ""):
     """Make valid folder"""
     if not os.path.exists(path):
@@ -73,7 +71,7 @@ def extract_focal(shape: tuple, K: np.ndarray):
     fx, fy = K[0, 0], K[1, 1]
     return 2. * np.arctan2(W, 2. * fx), 2. * np.arctan2(H, 2. * fy)
 
-def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', merge_train_test = False):
+def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', merge_train_test = False, scene_name = None):
     """Output NeRF json scene file
         - merge_train_test: if True, train.json will have test poses (with file_path = test_view)
     """
@@ -87,6 +85,8 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', 
     check_set = set(int(name[:-4]) for name in all_imgs)
     H, W, _ = example_img.shape
     scaled_h, scaled_w = H, W
+    if scene_name == "theOldGate" and scaled_h < scaled_w:
+        scaled_w, scaled_h = scaled_h, scaled_w
     if scale < 9.9e-1:
         scaled_h, scaled_w = int(H * scale), int(W * scale)
         num_images = len(all_imgs)
@@ -120,6 +120,8 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', 
     merged_test_view = 0
     for name in names:
         index = int(name[:name.rfind("_")])
+        if scene_name == "Library" and index == 58:
+            continue
         transform = all_exts[index]
         # transform[:3, :] = Z_ROT @ transform[:3, :]
         if index not in check_set:
@@ -140,17 +142,12 @@ def export_json(all_exts, all_ints, names, input_scene, scale, img_ext = 'jpg', 
         json.dump(train_file, output, indent=4)
     with open(os.path.join(input_scene, "test.json"), "w", encoding = 'utf-8') as output:
         json.dump(test_file, output, indent=4)
-    all_parts = input_scene.split("/")
-    scene_name = all_parts[-1] if all_parts[-1] else all_parts[-2] 
-    with open(os.path.join(secondary_outpath, scene_name, output_train_file), "w", encoding = 'utf-8') as output:
-        json.dump(train_file, output, indent=4)
-    with open(os.path.join(secondary_outpath, scene_name, "test.json"), "w", encoding = 'utf-8') as output:
-        json.dump(test_file, output, indent=4)
 
 def parser_opts():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("-i", "--input_scene",  required = True, help = "Input scene file", type = str)
+    parser.add_argument("-n", "--name",         required = True, help = "Name of the scene", type = str)
     parser.add_argument("-s", "--scale",        default = 1.0, help = "Scaling of the scene", type = float)
     parser.add_argument("-m", "--merge",        default = False, action = "store_true", help = "whether to merge train / test dataset")
     return parser.parse_args()
@@ -158,4 +155,4 @@ def parser_opts():
 if __name__ == '__main__':
     opts = parser_opts()
     all_exts, all_ints, names = input_extrinsics(os.path.join(opts.input_scene, "cams"))
-    export_json(all_exts, all_ints, names, opts.input_scene, opts.scale, merge_train_test = opts.merge)
+    export_json(all_exts, all_ints, names, opts.input_scene, opts.scale, merge_train_test = opts.merge, scene_name = opts.name)

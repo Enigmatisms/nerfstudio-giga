@@ -13,17 +13,19 @@ import natsort
 import numpy as np
 import tqdm
 
+
 def parser_opts():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, help='Config file path')
     parser.add_argument("-i", "--input_scene",      required = True, help = "Input scene", type = str)
     parser.add_argument("-m", "--mode",             required = True, default = "new", choices = ["none", "new", "no_skew", "colmap"], 
                         help = "Input modes to choose from.", type = str)
-    parser.add_argument("-p", "--input_pose_path",  default = "../../dataset/", 
+    parser.add_argument("-p", "--input_pose_path",  required = True,
                         help = "Input pose and camera intrinsics file.", type = str)
-    parser.add_argument("--input_img_path",         default = "../renders/", help = "Input image file path", type = str)
-    parser.add_argument("--output_path",            default = "../../dataset/", 
+    parser.add_argument("--output_path",            required = True,
                         help = "Where the images and transform.json are stored", type = str)
+
+    parser.add_argument("--input_img_path",         default = "./renders/", help = "Input image file path", type = str)
 
     parser.add_argument("-s", "--scale",            default = 1.0, help = "Scale the image (originally, 1/8 resolution)", type = float)
     parser.add_argument("-f", "--filter",           default = False, action = "store_true", help = "Do bilateral filtering")

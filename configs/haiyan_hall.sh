@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="haiyan${2}"
-full_res_name="HaiyanHall${2}_high"
+file_name="transforms_colmap"
+folder_name="haiyan"
+full_res_name="HaiyanHall_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/HaiyanHall/$file_name.json \

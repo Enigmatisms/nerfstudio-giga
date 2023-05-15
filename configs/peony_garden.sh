@@ -1,6 +1,6 @@
-file_name="transforms${2}"
-folder_name="peony${2}"
-full_res_name="PeonyGarden${2}_high"
+file_name="transforms_colmap"
+folder_name="peony"
+full_res_name="PeonyGarden_colmap"
 
 ns-train depth-nerfacto \
     --data ${1}/PeonyGarden/$file_name.json \
@@ -43,6 +43,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.intrinsic-scale-factor 0.125 \
     --pipeline.datamanager.camera-optimizer.mode off \
     --viewer.quit-on-train-completion True \
+    --pipeline.model.use-average-appearance-embedding False \
     --vis viewer+tensorboard \
     --max-num-iterations 30000
 
@@ -83,6 +84,7 @@ ns-train depth-nerfacto \
     --pipeline.datamanager.skip-eval True \
     --pipeline.datamanager.intrinsic-scale-factor 0.25 \
     --viewer.quit-on-train-completion True \
+    --pipeline.model.use-average-appearance-embedding False \
     --vis viewer+tensorboard \
     --pipeline.model.loss-coefficients.rgb-loss-coarse 0.5 \
     --optimizers.fields.optimizer.lr 5e-3 \
